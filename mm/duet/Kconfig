@@ -1,0 +1,31 @@
+config DUET
+	bool "Duet framework support"
+
+	help
+	  Duet is a framework aiming to reduce the IO footprint of analytics
+	  and maintenance work. By exposing page cache events to these tasks,
+	  it allows them to adapt their data processing order, in order to
+	  benefit from data available in the page cache. Duet's operation is
+	  based on hooks into the page cache.
+
+	  To compile support for Duet, say Y.
+
+config DUET_STATS
+	bool "Duet statistics collection"
+	depends on DUET
+	help
+	  This option enables support for the collection of statistics on the
+	  operation of Duet. It will print information about the data structures
+	  used internally, and profiling information about the framework.
+
+	  If unsure, say N.
+
+config DUET_DEBUG
+	bool "Duet debugging support"
+	depends on DUET
+	help
+	  Enable runtime debugging support for the Duet framework. This may
+	  enable additional and expensive checks with negative impact on
+	  performance.
+
+	  To compile debugging support for Duet, say Y. If unsure, say N.

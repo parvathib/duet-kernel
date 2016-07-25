@@ -294,6 +294,8 @@ config USELIB
 	  earlier, you may need to enable this syscall.  Current systems
 	  running glibc can safely disable this.
 
+source mm/duet/Kconfig
+
 config AUDIT
 	bool "Auditing support"
 	depends on NET
