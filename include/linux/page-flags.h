@@ -12,6 +12,9 @@
 #include <linux/mm_types.h>
 #include <generated/bounds.h>
 #endif /* !__GENERATING_BOUNDS_H */
+#ifdef CONFIG_DUET
+#include <linux/duet.h>
+#endif /* CONFIG_DUET */
 
 /*
  * Various page->flags bits:
@@ -254,8 +257,58 @@ PAGEFLAG(Error, error, PF_NO_COMPOUND) TESTCLEARFLAG(Error, error, PF_NO_COMPOUN
 PAGEFLAG(Referenced, referenced, PF_HEAD)
 	TESTCLEARFLAG(Referenced, referenced, PF_HEAD)
 	__SETPAGEFLAG(Referenced, referenced, PF_HEAD)
+#ifdef CONFIG_DUET
+TESTPAGEFLAG(Dirty, dirty, PF_HEAD)
+
+static inline void SetPageDirty(struct page *page)
+{
+	duet_hook_t *dhfp = NULL;
+
+	if (!test_and_set_bit(PG_dirty, &page->flags))
+		DUET_HOOK(dhfp, DUET_PAGE_DIRTY, page);
+}
+
+static inline void __ClearPageDirty(struct page *page)
+{
+	duet_hook_t *dhfp = NULL;
+
+	if (__test_and_clear_bit(PG_dirty, &page->flags))
+		DUET_HOOK(dhfp, DUET_PAGE_FLUSHED, page);
+}
+
+static inline void ClearPageDirty(struct page *page)
+{
+	duet_hook_t *dhfp = NULL;
+
+	if (test_and_clear_bit(PG_dirty, &page->flags))
+		DUET_HOOK(dhfp, DUET_PAGE_FLUSHED, page);
+}
+
+static inline int TestSetPageDirty(struct page *page)
+{
+	duet_hook_t *dhfp = NULL;
+
+	if (!test_and_set_bit(PG_dirty, &page->flags)) {
+		DUET_HOOK(dhfp, DUET_PAGE_DIRTY, page);
+		return 0;
+	}
+	return 1;
+}
+
+static inline int TestClearPageDirty(struct page *page)
+{
+	duet_hook_t *dhfp = NULL;
+
+	if (test_and_clear_bit(PG_dirty, &page->flags)) {
+		DUET_HOOK(dhfp, DUET_PAGE_FLUSHED, page);
+		return 1;
+	}
+	return 0;
+}
+#else
 PAGEFLAG(Dirty, dirty, PF_HEAD) TESTSCFLAG(Dirty, dirty, PF_HEAD)
 	__CLEARPAGEFLAG(Dirty, dirty, PF_HEAD)
+#endif /* CONFIG_DUET */
 PAGEFLAG(LRU, lru, PF_HEAD) __CLEARPAGEFLAG(LRU, lru, PF_HEAD)
 PAGEFLAG(Active, active, PF_HEAD) __CLEARPAGEFLAG(Active, active, PF_HEAD)
 	TESTCLEARFLAG(Active, active, PF_HEAD)

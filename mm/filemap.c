@@ -181,6 +181,11 @@ static void page_cache_tree_delete(struct address_space *mapping,
 void __delete_from_page_cache(struct page *page, void *shadow)
 {
 	struct address_space *mapping = page->mapping;
+#ifdef CONFIG_DUET
+	duet_hook_t *dhfp = NULL;
+
+	DUET_HOOK(dhfp, DUET_PAGE_REMOVED, page);
+#endif /* CONFIG_DUET */
 
 	trace_mm_filemap_delete_from_page_cache(page);
 	/*
@@ -633,6 +638,9 @@ static int __add_to_page_cache_locked(struct page *page,
 	int huge = PageHuge(page);
 	struct mem_cgroup *memcg;
 	int error;
+#ifdef CONFIG_DUET
+	duet_hook_t *dhfp = NULL;
+#endif
 
 	VM_BUG_ON_PAGE(!PageLocked(page), page);
 	VM_BUG_ON_PAGE(PageSwapBacked(page), page);
@@ -668,6 +676,9 @@ static int __add_to_page_cache_locked(struct page *page,
 	if (!huge)
 		mem_cgroup_commit_charge(page, memcg, false, false);
 	trace_mm_filemap_add_to_page_cache(page);
+#ifdef CONFIG_DUET
+	DUET_HOOK(dhfp, DUET_PAGE_ADDED, page);
+#endif
 	return 0;
 err_insert:
 	page->mapping = NULL;
