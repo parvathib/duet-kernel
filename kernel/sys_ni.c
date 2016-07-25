@@ -176,6 +176,12 @@ cond_syscall(sys_capget);
 cond_syscall(sys_capset);
 cond_syscall(sys_copy_file_range);
 
+/* Duet syscall entries */
+cond_syscall(sys_duet_status);
+cond_syscall(sys_duet_init);
+cond_syscall(sys_duet_bmap);
+cond_syscall(sys_duet_get_path);
+
 /* arch-specific weak syscall entries */
 cond_syscall(sys_pciconfig_read);
 cond_syscall(sys_pciconfig_write);

@@ -335,6 +335,10 @@
 326	common	copy_file_range		sys_copy_file_range
 327	64	preadv2			sys_preadv2
 328	64	pwritev2		sys_pwritev2
+329	common	duet_status		sys_duet_status
+330	common	duet_init		sys_duet_init
+331	common	duet_bmap		sys_duet_bmap
+332	common	duet_get_path		sys_duet_get_path
 
 #
 # x32-specific system call numbers start at 512 to avoid cache impact

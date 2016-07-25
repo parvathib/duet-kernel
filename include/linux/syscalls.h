@@ -65,6 +65,8 @@ struct old_linux_dirent;
 struct perf_event_attr;
 struct file_handle;
 struct sigaltstack;
+struct duet_status_args;
+struct duet_uuid_arg;
 union bpf_attr;
 
 #include <linux/types.h>
@@ -898,4 +900,10 @@ asmlinkage long sys_copy_file_range(int fd_in, loff_t __user *off_in,
 
 asmlinkage long sys_mlock2(unsigned long start, size_t len, int flags);
 
+asmlinkage long sys_duet_status(u16 flags, struct duet_status_args __user *arg);
+asmlinkage long sys_duet_init(const char __user *taskname, u32 regmask,
+			      const char __user *pathname);
+asmlinkage long sys_duet_bmap(u16 flags, struct duet_uuid_arg __user *arg);
+asmlinkage long sys_duet_get_path(struct duet_uuid_arg __user *uarg,
+				  char __user *pathbuf, int pathbufsize);
 #endif

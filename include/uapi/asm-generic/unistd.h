@@ -725,8 +725,18 @@ __SC_COMP(__NR_preadv2, sys_preadv2, compat_sys_preadv2)
 #define __NR_pwritev2 287
 __SC_COMP(__NR_pwritev2, sys_pwritev2, compat_sys_pwritev2)
 
+/* mm/duet/syscall.c */
+#define __NR_duet_status 288
+__SYSCALL(__NR_duet_status, sys_duet_status)
+#define __NR_duet_init 289
+__SYSCALL(__NR_duet_init, sys_duet_init)
+#define __NR_duet_bmap 290
+__SYSCALL(__NR_duet_bmap, sys_duet_bmap)
+#define __NR_duet_get_path 291
+__SYSCALL(__NR_duet_get_path, sys_duet_get_path)
+
 #undef __NR_syscalls
-#define __NR_syscalls 288
+#define __NR_syscalls 292
 
 /*
  * All syscalls below here should go away really,
