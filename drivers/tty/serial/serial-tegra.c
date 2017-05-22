@@ -1191,7 +1191,7 @@ static const char *tegra_uart_type(struct uart_port *u)
 	return TEGRA_UART_TYPE;
 }
 
-static struct uart_ops tegra_uart_ops = {
+static const struct uart_ops tegra_uart_ops = {
 	.tx_empty	= tegra_uart_tx_empty,
 	.set_mctrl	= tegra_uart_set_mctrl,
 	.get_mctrl	= tegra_uart_get_mctrl,
@@ -1317,7 +1317,12 @@ static int tegra_uart_probe(struct platform_device *pdev)
 	}
 
 	u->iotype = UPIO_MEM32;
-	u->irq = platform_get_irq(pdev, 0);
+	ret = platform_get_irq(pdev, 0);
+	if (ret < 0) {
+		dev_err(&pdev->dev, "Couldn't get IRQ\n");
+		return ret;
+	}
+	u->irq = ret;
 	u->regshift = 2;
 	ret = uart_add_one_port(&tegra_uart_driver, u);
 	if (ret < 0) {

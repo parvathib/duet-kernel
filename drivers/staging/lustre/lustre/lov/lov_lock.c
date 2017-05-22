@@ -15,11 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * version 2 along with this program; If not, see
- * http://www.sun.com/software/products/lustre/docs/GPLv2.pdf
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * http://www.gnu.org/licenses/gpl-2.0.html
  *
  * GPL HEADER END
  */
@@ -137,6 +133,11 @@ static struct lov_lock *lov_lock_sub_init(const struct lu_env *env,
 	struct lov_object       *loo    = cl2lov(obj);
 	struct lov_layout_raid0 *r0     = lov_r0(loo);
 	struct lov_lock		*lovlck;
+
+	CDEBUG(D_INODE, "%p: lock/io FID " DFID "/" DFID ", lock/io clobj %p/%p\n",
+	       loo, PFID(lu_object_fid(lov2lu(loo))),
+	       PFID(lu_object_fid(&obj->co_lu)),
+	       lov2cl(loo), obj);
 
 	file_start = cl_offset(lov2cl(loo), lock->cll_descr.cld_start);
 	file_end   = cl_offset(lov2cl(loo), lock->cll_descr.cld_end + 1) - 1;

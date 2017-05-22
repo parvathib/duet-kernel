@@ -15,11 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * version 2 along with this program; If not, see
- * http://www.sun.com/software/products/lustre/docs/GPLv2.pdf
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * http://www.gnu.org/licenses/gpl-2.0.html
  *
  * GPL HEADER END
  */
@@ -79,57 +75,58 @@ struct srpc_generic_reqst {
 
 struct srpc_generic_reply {
 	__u32			status;
-	lst_sid_t		sid;
+	struct lst_sid		sid;
 } WIRE_ATTR;
 
 /* FRAMEWORK RPCs */
 struct srpc_mksn_reqst {
 	__u64			mksn_rpyid;	/* reply buffer matchbits */
-	lst_sid_t		mksn_sid;	/* session id */
+	struct lst_sid		mksn_sid;	/* session id */
 	__u32			mksn_force;	/* use brute force */
 	char			mksn_name[LST_NAME_SIZE];
 } WIRE_ATTR; /* make session request */
 
 struct srpc_mksn_reply {
 	__u32			mksn_status;	/* session status */
-	lst_sid_t		mksn_sid;	/* session id */
+	struct lst_sid		mksn_sid;	/* session id */
 	__u32			mksn_timeout;	/* session timeout */
 	char			mksn_name[LST_NAME_SIZE];
 } WIRE_ATTR; /* make session reply */
 
 struct srpc_rmsn_reqst {
 	__u64			rmsn_rpyid;	/* reply buffer matchbits */
-	lst_sid_t		rmsn_sid;	/* session id */
+	struct lst_sid		rmsn_sid;	/* session id */
 } WIRE_ATTR; /* remove session request */
 
 struct srpc_rmsn_reply {
 	__u32			rmsn_status;
-	lst_sid_t		rmsn_sid;	/* session id */
+	struct lst_sid		rmsn_sid;	/* session id */
 } WIRE_ATTR; /* remove session reply */
 
 struct srpc_join_reqst {
 	__u64			join_rpyid;	/* reply buffer matchbits */
-	lst_sid_t		join_sid;	/* session id to join */
+	struct lst_sid		join_sid;	/* session id to join */
 	char			join_group[LST_NAME_SIZE]; /* group name */
 } WIRE_ATTR;
 
 struct srpc_join_reply {
 	__u32			join_status;	/* returned status */
-	lst_sid_t		join_sid;	/* session id */
+	struct lst_sid		join_sid;	/* session id */
 	__u32			join_timeout;	/* # seconds' inactivity to
-						 * expire */
+						 * expire
+						 */
 	char			join_session[LST_NAME_SIZE]; /* session name */
 } WIRE_ATTR;
 
 struct srpc_debug_reqst {
 	__u64			dbg_rpyid;	/* reply buffer matchbits */
-	lst_sid_t		dbg_sid;	/* session id */
+	struct lst_sid		dbg_sid;	/* session id */
 	__u32			dbg_flags;	/* bitmap of debug */
 } WIRE_ATTR;
 
 struct srpc_debug_reply {
 	__u32			dbg_status;	/* returned code */
-	lst_sid_t		dbg_sid;	/* session id */
+	struct lst_sid		dbg_sid;	/* session id */
 	__u32			dbg_timeout;	/* session timeout */
 	__u32			dbg_nbatch;	/* # of batches in the node */
 	char			dbg_name[LST_NAME_SIZE]; /* session name */
@@ -141,8 +138,8 @@ struct srpc_debug_reply {
 
 struct srpc_batch_reqst {
 	__u64		   bar_rpyid;	   /* reply buffer matchbits */
-	lst_sid_t	   bar_sid;	   /* session id */
-	lst_bid_t	   bar_bid;	   /* batch id */
+	struct lst_sid	   bar_sid;	   /* session id */
+	struct lst_bid	   bar_bid;	   /* batch id */
 	__u32		   bar_opc;	   /* create/start/stop batch */
 	__u32		   bar_testidx;    /* index of test */
 	__u32		   bar_arg;	   /* parameters */
@@ -150,22 +147,22 @@ struct srpc_batch_reqst {
 
 struct srpc_batch_reply {
 	__u32		   bar_status;	   /* status of request */
-	lst_sid_t	   bar_sid;	   /* session id */
+	struct lst_sid	   bar_sid;	   /* session id */
 	__u32		   bar_active;	   /* # of active tests in batch/test */
 	__u32		   bar_time;	   /* remained time */
 } WIRE_ATTR;
 
 struct srpc_stat_reqst {
 	__u64		   str_rpyid;	   /* reply buffer matchbits */
-	lst_sid_t	   str_sid;	   /* session id */
+	struct lst_sid	   str_sid;	   /* session id */
 	__u32		   str_type;	   /* type of stat */
 } WIRE_ATTR;
 
 struct srpc_stat_reply {
 	__u32		   str_status;
-	lst_sid_t	   str_sid;
-	sfw_counters_t	   str_fw;
-	srpc_counters_t    str_rpc;
+	struct lst_sid	   str_sid;
+	struct sfw_counters	str_fw;
+	struct srpc_counters	str_rpc;
 	lnet_counters_t    str_lnet;
 } WIRE_ATTR;
 
@@ -179,7 +176,7 @@ struct test_bulk_req_v1 {
 	__u16		   blk_opc;	   /* bulk operation code */
 	__u16		   blk_flags;	   /* data check flags */
 	__u32		   blk_len;	   /* data length */
-	__u32		   blk_offset;	   /* reserved: offset */
+	__u32		   blk_offset;	   /* offset */
 } WIRE_ATTR;
 
 struct test_ping_req {
@@ -190,11 +187,12 @@ struct test_ping_req {
 struct srpc_test_reqst {
 	__u64			tsr_rpyid;	/* reply buffer matchbits */
 	__u64			tsr_bulkid;	/* bulk buffer matchbits */
-	lst_sid_t		tsr_sid;	/* session id */
-	lst_bid_t		tsr_bid;	/* batch id */
+	struct lst_sid		tsr_sid;	/* session id */
+	struct lst_bid		tsr_bid;	/* batch id */
 	__u32			tsr_service;	/* test type: bulk|ping|... */
 	__u32			tsr_loop;	/* test client loop count or
-						 * # server buffers needed */
+						 * # server buffers needed
+						 */
 	__u32			tsr_concur;	/* concurrency of test */
 	__u8			tsr_is_client;	/* is test client or not */
 	__u8			tsr_stop_onerr; /* stop on error */
@@ -209,7 +207,7 @@ struct srpc_test_reqst {
 
 struct srpc_test_reply {
 	__u32			tsr_status;	/* returned code */
-	lst_sid_t		tsr_sid;
+	struct lst_sid		tsr_sid;
 } WIRE_ATTR;
 
 /* TEST RPCs */

@@ -15,11 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * version 2 along with this program; If not, see
- * http://www.sun.com/software/products/lustre/docs/GPLv2.pdf
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * http://www.gnu.org/licenses/gpl-2.0.html
  *
  * GPL HEADER END
  */
@@ -116,7 +112,8 @@ lnet_selftest_init(void)
 		rc = cfs_wi_sched_create("lst_t", lnet_cpt_table(), i,
 					 nthrs, &lst_sched_test[i]);
 		if (rc) {
-			CERROR("Failed to create CPT affinity WI scheduler %d for LST\n", i);
+			CWARN("Failed to create CPU partition affinity WI scheduler %d for LST\n",
+			      i);
 			goto error;
 		}
 	}

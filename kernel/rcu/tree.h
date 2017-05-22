@@ -24,6 +24,7 @@
 
 #include <linux/cache.h>
 #include <linux/spinlock.h>
+#include <linux/rtmutex.h>
 #include <linux/threads.h>
 #include <linux/cpumask.h>
 #include <linux/seqlock.h>
@@ -254,6 +255,13 @@ struct rcu_node {
 } ____cacheline_internodealigned_in_smp;
 
 /*
+ * Bitmasks in an rcu_node cover the interval [grplo, grphi] of CPU IDs, and
+ * are indexed relative to this interval rather than the global CPU ID space.
+ * This generates the bit for a CPU in node-local masks.
+ */
+#define leaf_node_cpu_bit(rnp, cpu) (1UL << ((cpu) - (rnp)->grplo))
+
+/*
  * Do a full breadth-first scan of the rcu_node structures for the
  * specified rcu_state structure.
  */
@@ -279,6 +287,14 @@ struct rcu_node {
 #define rcu_for_each_leaf_node(rsp, rnp) \
 	for ((rnp) = (rsp)->level[rcu_num_lvls - 1]; \
 	     (rnp) < &(rsp)->node[rcu_num_nodes]; (rnp)++)
+
+/*
+ * Iterate over all possible CPUs in a leaf RCU node.
+ */
+#define for_each_leaf_node_possible_cpu(rnp, cpu) \
+	for ((cpu) = cpumask_next(rnp->grplo - 1, cpu_possible_mask); \
+	     cpu <= rnp->grphi; \
+	     cpu = cpumask_next((cpu), cpu_possible_mask))
 
 /*
  * Union to allow "aggregate OR" operation on the need for a quiescent
@@ -385,9 +401,11 @@ struct rcu_data {
 #ifdef CONFIG_RCU_FAST_NO_HZ
 	struct rcu_head oom_head;
 #endif /* #ifdef CONFIG_RCU_FAST_NO_HZ */
+	atomic_long_t exp_workdone0;	/* # done by workqueue. */
 	atomic_long_t exp_workdone1;	/* # done by others #1. */
 	atomic_long_t exp_workdone2;	/* # done by others #2. */
 	atomic_long_t exp_workdone3;	/* # done by others #3. */
+	int exp_dynticks_snap;		/* Double-check need for IPI. */
 
 	/* 7) Callback offloading. */
 #ifdef CONFIG_RCU_NOCB_CPU
@@ -504,7 +522,6 @@ struct rcu_state {
 	struct mutex exp_mutex;			/* Serialize expedited GP. */
 	struct mutex exp_wake_mutex;		/* Serialize wakeup. */
 	unsigned long expedited_sequence;	/* Take a ticket. */
-	atomic_long_t expedited_normal;		/* # fallbacks to normal. */
 	atomic_t expedited_need_qs;		/* # CPUs left to check in. */
 	struct swait_queue_head expedited_wq;	/* Wait for check-ins. */
 	int ncpus_snap;				/* # CPUs seen last time. */
@@ -577,6 +594,8 @@ extern struct rcu_state rcu_bh_state;
 #ifdef CONFIG_PREEMPT_RCU
 extern struct rcu_state rcu_preempt_state;
 #endif /* #ifdef CONFIG_PREEMPT_RCU */
+
+int rcu_dynticks_snap(struct rcu_dynticks *rdtp);
 
 #ifdef CONFIG_RCU_BOOST
 DECLARE_PER_CPU(unsigned int, rcu_cpu_kthread_status);
@@ -669,18 +688,6 @@ static inline void rcu_nocb_q_lengths(struct rcu_data *rdp, long *ql, long *qll)
 #endif /* #else #ifdef CONFIG_RCU_NOCB_CPU */
 }
 #endif /* #ifdef CONFIG_RCU_TRACE */
-
-/*
- * Place this after a lock-acquisition primitive to guarantee that
- * an UNLOCK+LOCK pair act as a full barrier.  This guarantee applies
- * if the UNLOCK and LOCK are executed by the same CPU or if the
- * UNLOCK and LOCK operate on the same lock variable.
- */
-#ifdef CONFIG_PPC
-#define smp_mb__after_unlock_lock()	smp_mb()  /* Full ordering for lock. */
-#else /* #ifdef CONFIG_PPC */
-#define smp_mb__after_unlock_lock()	do { } while (0)
-#endif /* #else #ifdef CONFIG_PPC */
 
 /*
  * Wrappers for the rcu_node::lock acquire and release.

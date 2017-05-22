@@ -661,8 +661,9 @@ static ssize_t adt7316_store_da_high_resolution(struct device *dev,
 			chip->dac_bits = 12;
 		else if (chip->id == ID_ADT7317 || chip->id == ID_ADT7517)
 			chip->dac_bits = 10;
-	} else
+	} else {
 		config3 = chip->config3 & (~ADT7316_DA_HIGH_RESOLUTION);
+	}
 
 	ret = chip->bus.write(chip->bus.client, ADT7316_CONFIG3, config3);
 	if (ret)
@@ -1752,7 +1753,7 @@ static irqreturn_t adt7316_event_handler(int irq, void *private)
 		if ((chip->id & ID_FAMILY_MASK) != ID_ADT75XX)
 			stat1 &= 0x1F;
 
-		time = iio_get_time_ns();
+		time = iio_get_time_ns(indio_dev);
 		if (stat1 & BIT(0))
 			iio_push_event(indio_dev,
 				       IIO_UNMOD_EVENT_CODE(IIO_TEMP, 0,
@@ -1804,7 +1805,7 @@ static irqreturn_t adt7316_event_handler(int irq, void *private)
 							    0,
 							    IIO_EV_TYPE_THRESH,
 							    IIO_EV_DIR_RISING),
-				       iio_get_time_ns());
+				       iio_get_time_ns(indio_dev));
 	}
 
 	return IRQ_HANDLED;
@@ -2039,7 +2040,7 @@ static struct attribute *adt7316_event_attributes[] = {
 	NULL,
 };
 
-static struct attribute_group adt7316_event_attribute_group = {
+static const struct attribute_group adt7316_event_attribute_group = {
 	.attrs = adt7316_event_attributes,
 	.name = "events",
 };
@@ -2060,7 +2061,7 @@ static struct attribute *adt7516_event_attributes[] = {
 	NULL,
 };
 
-static struct attribute_group adt7516_event_attribute_group = {
+static const struct attribute_group adt7516_event_attribute_group = {
 	.attrs = adt7516_event_attributes,
 	.name = "events",
 };

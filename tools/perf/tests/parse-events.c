@@ -32,7 +32,7 @@ static int test__checkevent_tracepoint_multi(struct perf_evlist *evlist)
 	TEST_ASSERT_VAL("wrong number of entries", evlist->nr_entries > 1);
 	TEST_ASSERT_VAL("wrong number of groups", 0 == evlist->nr_groups);
 
-	evlist__for_each(evlist, evsel) {
+	evlist__for_each_entry(evlist, evsel) {
 		TEST_ASSERT_VAL("wrong type",
 			PERF_TYPE_TRACEPOINT == evsel->attr.type);
 		TEST_ASSERT_VAL("wrong sample_type",
@@ -207,7 +207,7 @@ test__checkevent_tracepoint_multi_modifier(struct perf_evlist *evlist)
 
 	TEST_ASSERT_VAL("wrong number of entries", evlist->nr_entries > 1);
 
-	evlist__for_each(evlist, evsel) {
+	evlist__for_each_entry(evlist, evsel) {
 		TEST_ASSERT_VAL("wrong exclude_user",
 				!evsel->attr.exclude_user);
 		TEST_ASSERT_VAL("wrong exclude_kernel",
@@ -1779,15 +1779,14 @@ static int test_pmu_events(void)
 	}
 
 	while (!ret && (ent = readdir(dir))) {
-#define MAX_NAME 100
 		struct evlist_test e;
-		char name[MAX_NAME];
+		char name[2 * NAME_MAX + 1 + 12 + 3];
 
-		if (!strcmp(ent->d_name, ".") ||
-		    !strcmp(ent->d_name, ".."))
+		/* Names containing . are special and cannot be used directly */
+		if (strchr(ent->d_name, '.'))
 			continue;
 
-		snprintf(name, MAX_NAME, "cpu/event=%s/u", ent->d_name);
+		snprintf(name, sizeof(name), "cpu/event=%s/u", ent->d_name);
 
 		e.name  = name;
 		e.check = test__checkevent_pmu_events;
@@ -1795,11 +1794,10 @@ static int test_pmu_events(void)
 		ret = test_event(&e);
 		if (ret)
 			break;
-		snprintf(name, MAX_NAME, "%s:u,cpu/event=%s/u", ent->d_name, ent->d_name);
+		snprintf(name, sizeof(name), "%s:u,cpu/event=%s/u", ent->d_name, ent->d_name);
 		e.name  = name;
 		e.check = test__checkevent_pmu_events_mix;
 		ret = test_event(&e);
-#undef MAX_NAME
 	}
 
 	closedir(dir);
@@ -1810,7 +1808,7 @@ static void debug_warn(const char *warn, va_list params)
 {
 	char msg[1024];
 
-	if (!verbose)
+	if (verbose <= 0)
 		return;
 
 	vsnprintf(msg, sizeof(msg), warn, params);

@@ -274,7 +274,7 @@ static int ad7150_write_event_config(struct iio_dev *indio_dev,
 error_ret:
 	mutex_unlock(&chip->state_lock);
 
-	return 0;
+	return ret;
 }
 
 static int ad7150_read_event_value(struct iio_dev *indio_dev,
@@ -414,7 +414,7 @@ error_ret:
 
 #define AD7150_TIMEOUT(chan, type, dir, ev_type, ev_dir)		\
 	IIO_DEVICE_ATTR(in_capacitance##chan##_##type##_##dir##_timeout, \
-		S_IRUGO | S_IWUSR,					\
+		0644,							\
 		&ad7150_show_timeout,					\
 		&ad7150_store_timeout,					\
 		IIO_UNMOD_EVENT_CODE(IIO_CAPACITANCE,			\
@@ -493,7 +493,7 @@ static irqreturn_t ad7150_event_handler(int irq, void *private)
 	struct iio_dev *indio_dev = private;
 	struct ad7150_chip_info *chip = iio_priv(indio_dev);
 	u8 int_status;
-	s64 timestamp = iio_get_time_ns();
+	s64 timestamp = iio_get_time_ns(indio_dev);
 	int ret;
 
 	ret = i2c_smbus_read_byte_data(chip->client, AD7150_STATUS);
@@ -562,7 +562,7 @@ static struct attribute *ad7150_event_attributes[] = {
 	NULL,
 };
 
-static struct attribute_group ad7150_event_attribute_group = {
+static const struct attribute_group ad7150_event_attribute_group = {
 	.attrs = ad7150_event_attributes,
 	.name = "events",
 };
@@ -610,27 +610,27 @@ static int ad7150_probe(struct i2c_client *client,
 
 	if (client->irq) {
 		ret = devm_request_threaded_irq(&client->dev, client->irq,
-					   NULL,
-					   &ad7150_event_handler,
-					   IRQF_TRIGGER_RISING |
-					   IRQF_TRIGGER_FALLING |
-					   IRQF_ONESHOT,
-					   "ad7150_irq1",
-					   indio_dev);
+						NULL,
+						&ad7150_event_handler,
+						IRQF_TRIGGER_RISING |
+						IRQF_TRIGGER_FALLING |
+						IRQF_ONESHOT,
+						"ad7150_irq1",
+						indio_dev);
 		if (ret)
 			return ret;
 	}
 
 	if (client->dev.platform_data) {
 		ret = devm_request_threaded_irq(&client->dev, *(unsigned int *)
-					   client->dev.platform_data,
-					   NULL,
-					   &ad7150_event_handler,
-					   IRQF_TRIGGER_RISING |
-					   IRQF_TRIGGER_FALLING |
-					   IRQF_ONESHOT,
-					   "ad7150_irq2",
-					   indio_dev);
+						client->dev.platform_data,
+						NULL,
+						&ad7150_event_handler,
+						IRQF_TRIGGER_RISING |
+						IRQF_TRIGGER_FALLING |
+						IRQF_ONESHOT,
+						"ad7150_irq2",
+						indio_dev);
 		if (ret)
 			return ret;
 	}

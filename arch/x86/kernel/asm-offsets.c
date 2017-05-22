@@ -29,9 +29,14 @@
 
 void common(void) {
 	BLANK();
-	OFFSET(TI_flags, thread_info, flags);
-	OFFSET(TI_status, thread_info, status);
-	OFFSET(TI_addr_limit, thread_info, addr_limit);
+	OFFSET(TASK_threadsp, task_struct, thread.sp);
+#ifdef CONFIG_CC_STACKPROTECTOR
+	OFFSET(TASK_stack_canary, task_struct, stack_canary);
+#endif
+
+	BLANK();
+	OFFSET(TASK_TI_flags, task_struct, thread_info.flags);
+	OFFSET(TASK_addr_limit, task_struct, thread.addr_limit);
 
 	BLANK();
 	OFFSET(crypto_tfm_ctx_offset, crypto_tfm, __crt_ctx);
@@ -76,6 +81,7 @@ void common(void) {
 
 	BLANK();
 	OFFSET(BP_scratch, boot_params, scratch);
+	OFFSET(BP_secure_boot, boot_params, secure_boot);
 	OFFSET(BP_loadflags, boot_params, hdr.loadflags);
 	OFFSET(BP_hardware_subarch, boot_params, hdr.hardware_subarch);
 	OFFSET(BP_version, boot_params, hdr.version);

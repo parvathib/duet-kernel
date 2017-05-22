@@ -31,6 +31,7 @@
 #include <linux/types.h>
 #include <linux/usb.h>
 #include <linux/wait.h>
+#include <linux/sched/task.h>
 #include <uapi/linux/usbip.h>
 
 #define USBIP_VERSION "1.0.0"
@@ -245,7 +246,7 @@ enum usbip_side {
 #define USBIP_EH_RESET		(1 << 2)
 #define USBIP_EH_UNUSABLE	(1 << 3)
 
-#define SDEV_EVENT_REMOVED   (USBIP_EH_SHUTDOWN | USBIP_EH_RESET | USBIP_EH_BYE)
+#define	SDEV_EVENT_REMOVED	(USBIP_EH_SHUTDOWN | USBIP_EH_BYE)
 #define	SDEV_EVENT_DOWN		(USBIP_EH_SHUTDOWN | USBIP_EH_RESET)
 #define	SDEV_EVENT_ERROR_TCP	(USBIP_EH_SHUTDOWN | USBIP_EH_RESET)
 #define	SDEV_EVENT_ERROR_SUBMIT	(USBIP_EH_SHUTDOWN | USBIP_EH_RESET)

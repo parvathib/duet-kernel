@@ -15,11 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * version 2 along with this program; If not, see
- * http://www.sun.com/software/products/lustre/docs/GPLv2.pdf
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * http://www.gnu.org/licenses/gpl-2.0.html
  *
  * GPL HEADER END
  */
@@ -147,13 +143,13 @@ int
 lnet_connect(struct socket **sockp, lnet_nid_t peer_nid,
 	     __u32 local_ip, __u32 peer_ip, int peer_port)
 {
-	lnet_acceptor_connreq_t cr;
+	struct lnet_acceptor_connreq cr;
 	struct socket *sock;
 	int rc;
 	int port;
 	int fatal;
 
-	CLASSERT(sizeof(cr) <= 16);	    /* not too big to be on the stack */
+	BUILD_BUG_ON(sizeof(cr) > 16);	    /* too big to be on the stack */
 
 	for (port = LNET_ACCEPTOR_MAX_RESERVED_PORT;
 	     port >= LNET_ACCEPTOR_MIN_RESERVED_PORT;
@@ -168,7 +164,7 @@ lnet_connect(struct socket **sockp, lnet_nid_t peer_nid,
 			continue;
 		}
 
-		CLASSERT(LNET_PROTO_ACCEPTOR_VERSION == 1);
+		BUILD_BUG_ON(LNET_PROTO_ACCEPTOR_VERSION != 1);
 
 		cr.acr_magic   = LNET_PROTO_ACCEPTOR_MAGIC;
 		cr.acr_version = LNET_PROTO_ACCEPTOR_VERSION;
@@ -210,7 +206,7 @@ EXPORT_SYMBOL(lnet_connect);
 static int
 lnet_accept(struct socket *sock, __u32 magic)
 {
-	lnet_acceptor_connreq_t cr;
+	struct lnet_acceptor_connreq cr;
 	__u32 peer_ip;
 	int peer_port;
 	int rc;
@@ -288,7 +284,7 @@ lnet_accept(struct socket *sock, __u32 magic)
 
 	rc = lnet_sock_read(sock, &cr.acr_nid,
 			    sizeof(cr) -
-			    offsetof(lnet_acceptor_connreq_t, acr_nid),
+			    offsetof(struct lnet_acceptor_connreq, acr_nid),
 			    accept_timeout);
 	if (rc) {
 		CERROR("Error %d reading connection request from %pI4h\n",
@@ -334,7 +330,7 @@ lnet_acceptor(void *arg)
 	__u32 magic;
 	__u32 peer_ip;
 	int peer_port;
-	int secure = (int)((long_ptr_t)arg);
+	int secure = (int)((long)arg);
 
 	LASSERT(!lnet_acceptor_state.pta_sock);
 
@@ -463,7 +459,7 @@ lnet_acceptor_start(void)
 	if (!lnet_count_acceptor_nis())  /* not required */
 		return 0;
 
-	task = kthread_run(lnet_acceptor, (void *)(ulong_ptr_t)secure,
+	task = kthread_run(lnet_acceptor, (void *)(uintptr_t)secure,
 			   "acceptor_%03ld", secure);
 	if (IS_ERR(task)) {
 		rc2 = PTR_ERR(task);

@@ -17,7 +17,13 @@ struct msi_desc;
 struct pci_dev;
 struct platform_msi_priv_data;
 void __get_cached_msi_msg(struct msi_desc *entry, struct msi_msg *msg);
+#ifdef CONFIG_GENERIC_MSI_IRQ
 void get_cached_msi_msg(unsigned int irq, struct msi_msg *msg);
+#else
+static inline void get_cached_msi_msg(unsigned int irq, struct msi_msg *msg)
+{
+}
+#endif
 
 typedef void (*irq_write_msi_msg_t)(struct msi_desc *desc,
 				    struct msi_msg *msg);
@@ -47,6 +53,7 @@ struct fsl_mc_msi_desc {
  * @nvec_used:	The number of vectors used
  * @dev:	Pointer to the device which uses this descriptor
  * @msg:	The last set MSI message cached for reuse
+ * @affinity:	Optional pointer to a cpu affinity mask for this descriptor
  *
  * @masked:	[PCI MSI/X] Mask bits
  * @is_msix:	[PCI MSI/X] True if MSI-X
@@ -67,6 +74,7 @@ struct msi_desc {
 	unsigned int			nvec_used;
 	struct device			*dev;
 	struct msi_msg			msg;
+	struct cpumask			*affinity;
 
 	union {
 		/* PCI MSI/X specific data */
@@ -114,18 +122,22 @@ struct msi_desc {
 
 struct pci_dev *msi_desc_to_pci_dev(struct msi_desc *desc);
 void *msi_desc_to_pci_sysdata(struct msi_desc *desc);
+void pci_write_msi_msg(unsigned int irq, struct msi_msg *msg);
 #else /* CONFIG_PCI_MSI */
 static inline void *msi_desc_to_pci_sysdata(struct msi_desc *desc)
 {
 	return NULL;
 }
+static inline void pci_write_msi_msg(unsigned int irq, struct msi_msg *msg)
+{
+}
 #endif /* CONFIG_PCI_MSI */
 
-struct msi_desc *alloc_msi_entry(struct device *dev);
+struct msi_desc *alloc_msi_entry(struct device *dev, int nvec,
+				 const struct cpumask *affinity);
 void free_msi_entry(struct msi_desc *entry);
 void __pci_read_msi_msg(struct msi_desc *entry, struct msi_msg *msg);
 void __pci_write_msi_msg(struct msi_desc *entry, struct msi_msg *msg);
-void pci_write_msi_msg(unsigned int irq, struct msi_msg *msg);
 
 u32 __pci_msix_desc_mask_irq(struct msi_desc *desc, u32 flag);
 u32 __pci_msi_desc_mask_irq(struct msi_desc *desc, u32 mask, u32 flag);
@@ -264,12 +276,12 @@ enum {
 	 * callbacks.
 	 */
 	MSI_FLAG_USE_DEF_CHIP_OPS	= (1 << 1),
-	/* Build identity map between hwirq and irq */
-	MSI_FLAG_IDENTITY_MAP		= (1 << 2),
 	/* Support multiple PCI MSI interrupts */
-	MSI_FLAG_MULTI_PCI_MSI		= (1 << 3),
+	MSI_FLAG_MULTI_PCI_MSI		= (1 << 2),
 	/* Support PCI MSIX interrupts */
-	MSI_FLAG_PCI_MSIX		= (1 << 4),
+	MSI_FLAG_PCI_MSIX		= (1 << 3),
+	/* Needs early activate, required for PCI */
+	MSI_FLAG_ACTIVATE_EARLY		= (1 << 4),
 };
 
 int msi_domain_set_affinity(struct irq_data *data, const struct cpumask *mask,
@@ -313,12 +325,6 @@ void pci_msi_domain_write_msg(struct irq_data *irq_data, struct msi_msg *msg);
 struct irq_domain *pci_msi_create_irq_domain(struct fwnode_handle *fwnode,
 					     struct msi_domain_info *info,
 					     struct irq_domain *parent);
-int pci_msi_domain_alloc_irqs(struct irq_domain *domain, struct pci_dev *dev,
-			      int nvec, int type);
-void pci_msi_domain_free_irqs(struct irq_domain *domain, struct pci_dev *dev);
-struct irq_domain *pci_msi_create_default_irq_domain(struct fwnode_handle *fwnode,
-		 struct msi_domain_info *info, struct irq_domain *parent);
-
 irq_hw_number_t pci_msi_domain_calc_hwirq(struct pci_dev *dev,
 					  struct msi_desc *desc);
 int pci_msi_domain_check_cap(struct irq_domain *domain,

@@ -11,6 +11,8 @@
 
 #include <linux/perf_event.h>
 #include <linux/slab.h>
+#include <linux/sched/task_stack.h>
+
 #include "internal.h"
 
 struct callchain_cpus_entries {
@@ -104,7 +106,7 @@ fail:
 	return -ENOMEM;
 }
 
-int get_callchain_buffers(void)
+int get_callchain_buffers(int event_max_stack)
 {
 	int err = 0;
 	int count;
@@ -121,6 +123,15 @@ int get_callchain_buffers(void)
 		/* If the allocation failed, give up */
 		if (!callchain_cpus_entries)
 			err = -ENOMEM;
+		/*
+		 * If requesting per event more than the global cap,
+		 * return a different error to help userspace figure
+		 * this out.
+		 *
+		 * And also do it here so that we have &callchain_mutex held.
+		 */
+		if (event_max_stack > sysctl_perf_event_max_stack)
+			err = -EOVERFLOW;
 		goto exit;
 	}
 
@@ -174,11 +185,12 @@ perf_callchain(struct perf_event *event, struct pt_regs *regs)
 	bool user   = !event->attr.exclude_callchain_user;
 	/* Disallow cross-task user callchains. */
 	bool crosstask = event->ctx->task && event->ctx->task != current;
+	const u32 max_stack = event->attr.sample_max_stack;
 
 	if (!kernel && !user)
 		return NULL;
 
-	return get_perf_callchain(regs, 0, kernel, user, sysctl_perf_event_max_stack, crosstask, true);
+	return get_perf_callchain(regs, 0, kernel, user, max_stack, crosstask, true);
 }
 
 struct perf_callchain_entry *

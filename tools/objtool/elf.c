@@ -30,6 +30,13 @@
 #include "elf.h"
 #include "warn.h"
 
+/*
+ * Fallback for systems without this "read, mmaping if possible" cmd.
+ */
+#ifndef ELF_C_READ_MMAP
+#define ELF_C_READ_MMAP ELF_C_READ
+#endif
+
 struct section *find_section_by_name(struct elf *elf, const char *name)
 {
 	struct section *sec;
@@ -73,6 +80,18 @@ struct symbol *find_symbol_by_offset(struct section *sec, unsigned long offset)
 	list_for_each_entry(sym, &sec->symbol_list, list)
 		if (sym->type != STT_SECTION &&
 		    sym->offset == offset)
+			return sym;
+
+	return NULL;
+}
+
+struct symbol *find_symbol_containing(struct section *sec, unsigned long offset)
+{
+	struct symbol *sym;
+
+	list_for_each_entry(sym, &sec->symbol_list, list)
+		if (sym->type != STT_SECTION &&
+		    offset >= sym->offset && offset < sym->offset + sym->len)
 			return sym;
 
 	return NULL;

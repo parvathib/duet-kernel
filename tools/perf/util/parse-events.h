@@ -68,6 +68,10 @@ enum {
 	PARSE_EVENTS__TERM_TYPE_STACKSIZE,
 	PARSE_EVENTS__TERM_TYPE_NOINHERIT,
 	PARSE_EVENTS__TERM_TYPE_INHERIT,
+	PARSE_EVENTS__TERM_TYPE_MAX_STACK,
+	PARSE_EVENTS__TERM_TYPE_NOOVERWRITE,
+	PARSE_EVENTS__TERM_TYPE_OVERWRITE,
+	PARSE_EVENTS__TERM_TYPE_DRV_CFG,
 	__PARSE_EVENTS__TERM_TYPE_NR,
 };
 
@@ -90,6 +94,7 @@ struct parse_events_term {
 	int type_term;
 	struct list_head list;
 	bool used;
+	bool no_value;
 
 	/* error string indexes for within parsed string */
 	int err_term;
@@ -118,6 +123,7 @@ void parse_events__shrink_config_terms(void);
 int parse_events__is_hardcoded_term(struct parse_events_term *term);
 int parse_events_term__num(struct parse_events_term **term,
 			   int type_term, char *config, u64 num,
+			   bool novalue,
 			   void *loc_term, void *loc_val);
 int parse_events_term__str(struct parse_events_term **term,
 			   int type_term, char *config, char *str,
@@ -133,7 +139,7 @@ int parse_events__modifier_event(struct list_head *list, char *str, bool add);
 int parse_events__modifier_group(struct list_head *list, char *event_mod);
 int parse_events_name(struct list_head *list, char *name);
 int parse_events_add_tracepoint(struct list_head *list, int *idx,
-				char *sys, char *event,
+				const char *sys, const char *event,
 				struct parse_events_error *error,
 				struct list_head *head_config);
 int parse_events_load_bpf(struct parse_events_evlist *data,
@@ -168,7 +174,8 @@ void parse_events_update_lists(struct list_head *list_event,
 void parse_events_evlist_error(struct parse_events_evlist *data,
 			       int idx, const char *str);
 
-void print_events(const char *event_glob, bool name_only);
+void print_events(const char *event_glob, bool name_only, bool quiet,
+		  bool long_desc);
 
 struct event_symbol {
 	const char	*symbol;
@@ -182,6 +189,8 @@ void print_symbol_events(const char *event_glob, unsigned type,
 void print_tracepoint_events(const char *subsys_glob, const char *event_glob,
 			     bool name_only);
 int print_hwcache_events(const char *event_glob, bool name_only);
+void print_sdt_events(const char *subsys_glob, const char *event_glob,
+		      bool name_only);
 int is_valid_tracepoint(const char *event_string);
 
 int valid_event_mount(const char *eventfs);

@@ -27,6 +27,7 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <linux/bitmap.h>
+#include <linux/time64.h>
 
 #include "../../perf.h"
 #include "../debug.h"
@@ -235,6 +236,7 @@ static void define_event_symbols(struct event_format *event,
 			      cur_field_name);
 		break;
 	case PRINT_HEX:
+	case PRINT_HEX_STR:
 		define_event_symbols(event, ev_name, args->hex.field);
 		define_event_symbols(event, ev_name, args->hex.size);
 		break;
@@ -273,7 +275,7 @@ static PyObject *get_field_numeric_entry(struct event_format *event,
 		struct format_field *field, void *data)
 {
 	bool is_array = field->flags & FIELD_IS_ARRAY;
-	PyObject *obj, *list = NULL;
+	PyObject *obj = NULL, *list = NULL;
 	unsigned long long val;
 	unsigned int item_size, n_items, i;
 
@@ -367,10 +369,10 @@ static PyObject *python_process_callchain(struct perf_sample *sample,
 		if (node->map) {
 			struct map *map = node->map;
 			const char *dsoname = "[unknown]";
-			if (map && map->dso && (map->dso->name || map->dso->long_name)) {
+			if (map && map->dso) {
 				if (symbol_conf.show_kernel_path && map->dso->long_name)
 					dsoname = map->dso->long_name;
-				else if (map->dso->name)
+				else
 					dsoname = map->dso->name;
 			}
 			pydict_set_item_string_decref(pyelem, "dso",
@@ -386,13 +388,12 @@ exit:
 	return pylist;
 }
 
-
 static void python_process_tracepoint(struct perf_sample *sample,
 				      struct perf_evsel *evsel,
 				      struct addr_location *al)
 {
 	struct event_format *event = evsel->tp_format;
-	PyObject *handler, *context, *t, *obj, *callchain;
+	PyObject *handler, *context, *t, *obj = NULL, *callchain;
 	PyObject *dict = NULL;
 	static char handler_name[256];
 	struct format_field *field;
@@ -427,8 +428,8 @@ static void python_process_tracepoint(struct perf_sample *sample,
 		if (!dict)
 			Py_FatalError("couldn't create Python dict");
 	}
-	s = nsecs / NSECS_PER_SEC;
-	ns = nsecs - s * NSECS_PER_SEC;
+	s = nsecs / NSEC_PER_SEC;
+	ns = nsecs - s * NSEC_PER_SEC;
 
 	scripting_context->event_data = data;
 	scripting_context->pevent = evsel->tp_format->pevent;
@@ -457,14 +458,26 @@ static void python_process_tracepoint(struct perf_sample *sample,
 		pydict_set_item_string_decref(dict, "common_callchain", callchain);
 	}
 	for (field = event->format.fields; field; field = field->next) {
-		if (field->flags & FIELD_IS_STRING) {
-			int offset;
+		unsigned int offset, len;
+		unsigned long long val;
+
+		if (field->flags & FIELD_IS_ARRAY) {
+			offset = field->offset;
+			len    = field->size;
 			if (field->flags & FIELD_IS_DYNAMIC) {
-				offset = *(int *)(data + field->offset);
+				val     = pevent_read_number(scripting_context->pevent,
+							     data + offset, len);
+				offset  = val;
+				len     = offset >> 16;
 				offset &= 0xffff;
-			} else
-				offset = field->offset;
-			obj = PyString_FromString((char *)data + offset);
+			}
+			if (field->flags & FIELD_IS_STRING &&
+			    is_printable_array(data + offset, len)) {
+				obj = PyString_FromString((char *) data + offset);
+			} else {
+				obj = PyByteArray_FromStringAndSize((const char *) data + offset, len);
+				field->flags &= ~FIELD_IS_STRING;
+			}
 		} else { /* FIELD_IS_NUMERIC */
 			obj = get_field_numeric_entry(event, field, data);
 		}
