@@ -44,9 +44,12 @@ struct inotify_event {
 #define IN_Q_OVERFLOW		0x00004000	/* Event queued overflowed */
 #define IN_IGNORED		0x00008000	/* File was ignored */
 
+
 /* helper events */
 #define IN_CLOSE		(IN_CLOSE_WRITE | IN_CLOSE_NOWRITE) /* close */
 #define IN_MOVE			(IN_MOVED_FROM | IN_MOVED_TO) /* moves */
+
+#define IN_RECURSIVE_ADD	0x00800000	/* Recursively add the sub-directories */
 
 /* special flags */
 #define IN_ONLYDIR		0x01000000	/* only watch the path if it is a directory */

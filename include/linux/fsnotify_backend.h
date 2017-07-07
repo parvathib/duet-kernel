@@ -18,6 +18,10 @@
 #include <linux/atomic.h>
 #include <linux/user_namespace.h>
 
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+atomic_t g_rutime;
+u32 group_masks[128];
+#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 /*
  * IN_* from inotfy.h lines up EXACTLY with FS_*, this is so we can easily
  * convert between them.  dnotify only needs conversion at watch creation
@@ -43,6 +47,8 @@
 
 #define FS_OPEN_PERM		0x00010000	/* open event in an permission hook */
 #define FS_ACCESS_PERM		0x00020000	/* access event in a permissions hook */
+
+#define FS_RECURSIVE_ADD	0x00800000	/* recursively add sub-directories */
 
 #define FS_EXCL_UNLINK		0x04000000	/* do not send events if object is unlinked */
 #define FS_ISDIR		0x40000000	/* event occurred against dir */
@@ -210,6 +216,9 @@ struct fsnotify_mark_connector {
 	spinlock_t lock;
 #define FSNOTIFY_OBJ_TYPE_INODE		0x01
 #define FSNOTIFY_OBJ_TYPE_VFSMOUNT	0x02
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+#define FSNOTIFY_OBJ_TYPE_REC_RULE	0x04
+#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 #define FSNOTIFY_OBJ_ALL_TYPES		(FSNOTIFY_OBJ_TYPE_INODE | \
 					 FSNOTIFY_OBJ_TYPE_VFSMOUNT)
 	unsigned int flags;	/* Type of object [lock] */
@@ -222,6 +231,14 @@ struct fsnotify_mark_connector {
 		/* Used listing heads to free after srcu period expires */
 		struct fsnotify_mark_connector *destroy_next;
 	};
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+	struct {
+		atomic_t nrules;                /* number of rules on inode r_ino */
+		atomic_t r_utime;		/* Rule updated time */
+		struct hlist_head r_list;       /* list of the recursive rules added by the user for this inode */
+	};
+#endif /* CONFIG_FSNOTIFY_RECURSIVE */:w
+
 };
 
 /*

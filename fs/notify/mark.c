@@ -444,6 +444,11 @@ static int fsnotify_attach_connector_to_object(
 		return -ENOMEM;
 	spin_lock_init(&conn->lock);
 	INIT_HLIST_HEAD(&conn->list);
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+	atomic_set(&conn->nrules, 0); 
+	atomic_set(&conn->r_utime, 0);
+	INIT_HLIST_HEAD(&conn->r_list); 
+#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 	if (inode) {
 		conn->flags = FSNOTIFY_OBJ_TYPE_INODE;
 		conn->inode = igrab(inode);
@@ -493,6 +498,25 @@ out:
 	return conn;
 }
 
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+/* 
+ * add a mark in recursive rule. Set the bit FSNOTIFY_OBJ_TYPE_REC_RULE in connector flags. 
+ * This is useful when we calculate the cumilative mask when we implicitly add a mark which
+ * falls in the subtree under this rule. 
+ */
+void fsnotify_add_recursive_rule(
+				struct fsnotify_mark *mark, 
+				struct fsnotify_mark_connector *conn) 
+{
+	
+	hlist_add_head_rcu(&mark->obj_list, &conn->r_list);
+	conn->flags |= FSNOTIFY_OBJ_TYPE_REC_RULE;
+	atomic_inc(&conn->nrules);
+	atomic_inc(&g_rutime);
+	atomic_set(&conn->r_utime, g_rutime);
+}
+#endif /* CONFIG_FSNOTIFY_RECURSIVE */
+
 /*
  * Add mark into proper place in given list of marks. These marks may be used
  * for the fsnotify backend to determine which event types should be delivered
@@ -525,7 +549,13 @@ restart:
 			return err;
 		goto restart;
 	}
-
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+	if(mark->mask & FS_RECURSIVE_ADD) {
+		err = fsnotify_add_recursive_rule(mark, conn);
+		if(err)
+			return err;
+	}
+#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 	/* is mark the first mark? */
 	if (hlist_empty(&conn->list)) {
 		hlist_add_head_rcu(&mark->obj_list, &conn->list);

@@ -504,10 +504,25 @@ static int inotify_update_existing_watch(struct fsnotify_group *group,
 
 	spin_lock(&fsn_mark->lock);
 	old_mask = fsn_mark->mask;
-	if (add)
-		fsn_mark->mask |= mask;
-	else
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+	if((old_mask & IN_RECURSIVE_ADD) && !(mask & IN_RECURSIVE_ADD)) {
+		i_mark->spare_mask = old_mask;
 		fsn_mark->mask = mask;
+	}
+	else if (!(old_mask & IN_RECURSIVE_ADD) && (mask & IN_RECURSIVE_ADD)) {
+		if(i_mark->flags & )
+		i_mark->spare_mask = old_mask;
+		fsn_mark->mask = mask;
+	}
+	else {
+#endif /* CONFIG_FSNOTIFY_RECURSIVE */
+		if (add)
+			fsn_mark->mask |= mask;
+		else
+			fsn_mark->mask = mask;
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+	}
+#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 	new_mask = fsn_mark->mask;
 	spin_unlock(&fsn_mark->lock);
 
@@ -551,6 +566,9 @@ static int inotify_new_watch(struct fsnotify_group *group,
 	fsnotify_init_mark(&tmp_i_mark->fsn_mark, group);
 	tmp_i_mark->fsn_mark.mask = mask;
 	tmp_i_mark->wd = -1;
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+	tmp_i_mark->spare_mask = 0;
+#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 
 	ret = inotify_add_to_idr(idr, idr_lock, tmp_i_mark);
 	if (ret)
@@ -570,7 +588,6 @@ static int inotify_new_watch(struct fsnotify_group *group,
 		inotify_remove_from_idr(group, tmp_i_mark);
 		goto out_err;
 	}
-
 
 	/* return the watch descriptor for this new mark */
 	ret = tmp_i_mark->wd;
