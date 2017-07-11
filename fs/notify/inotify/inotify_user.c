@@ -501,6 +501,8 @@ static int inotify_update_existing_watch(struct fsnotify_group *group,
 	int add = (arg & IN_MASK_ADD);
 	int ret;
 	int add_rule = 0;
+	int save_spare_mask = 0;
+	__u32 spare_mask;
 	mask = inotify_arg_to_mask(arg);
 
 	fsn_mark = fsnotify_find_mark(&inode->i_fsnotify_marks, group);
@@ -512,28 +514,37 @@ static int inotify_update_existing_watch(struct fsnotify_group *group,
 	spin_lock(&fsn_mark->lock);
 	old_mask = fsn_mark->mask;
 #ifdef CONFIG_FSNOTIFY_RECURSIVE
-	if((fsnotify_is_rule_mark(fsn_mark)) && !(mask & IN_RECURSIVE_ADD)) {  // R & N : Don't allow.
-		ret = -EINVAL;
-		spin_unlock(&fsn_mark->lock);
-		goto end;
-	}
-	if(fsnotify_is_recursive_mark(fsn_mark)) { // If it r, always replace the mask. 
-		add = 0; 
-	}
-	if((mask & IN_RECURSIVE_ADD) && (!implicit_rec_watch)) { //This is a Rule (R)
-		if(fsnotify_is_normal_mark(fsn_mark)) { // If the current mark is N : Save the mask in spare_mask.
-			i_mark->spare_mask = old_mask;
+	if(!implicit_rec_watch) { //explicit add request
+		if((fsnotify_is_rule_mark(fsn_mark) && !(mask & IN_RECURSIVE_ADD)) || // Re & N : Don't allow.
+			(fsnotify_is_normal_mark(fsn_mark) && (mask & IN_RECURSIVE_ADD))){  // N & Re : Don't allow.
+			ret = -EINVAL;
+			spin_unlock(&fsn_mark->lock);
+			goto end;
 		}
-		if(!fsnotify_is_rule_mark(fsn_mark)) { // If the current mark is N or r, this is the first time the rule is created.
-			add_rule = 1; //add new rule
-			add = 0;    //replace mask
+		if(fsnotify_is_recursive_mark(fsn_mark)){ // If it Ri & (Re or N), always add the mask. 
+			add = 1;
+			save_spare_mask = 1;
+			spare_mask = mask;
+			if(mask & IN_RECURSIVE_ADD) //If it is Ri & Re, add the rule to the list
+				add_rule = 1; 
 		}
+	}
+	if((mask & IN_RECURSIVE_ADD) && (implicit_rec_watch)) { // implicit add request (Ri)
+		if(fsnotify_is_normal_mark(fsn_mark) || fsnotify_is_rule_mark(fsn_mark)) { // If the current mark is R or N : Save the mask in spare_mask.
+			add = 1;
+			save_spare_mask = 1;
+			spare_mask = old_mask;
+		}
+	}
+	if(!implicit_rec_watch && (mask & IN_RECURSIVE_ADD)) {
 		ret = fsnotify_update_recursive_rule(&inode->i_fsnotify_marks, fsn_mark, add_rule); //add/update rule
 		if(!ret) {
 			spin_unlock(&fsn_mark->lock);
 			goto end;
 		}		
 	}
+	if(!i_mark->spare_mask)
+		i_mark->spare_mask = spare_mask;
 
 #endif /* CONFIG_FSNOTIFY_RECURSIVE */
 	if (add)
