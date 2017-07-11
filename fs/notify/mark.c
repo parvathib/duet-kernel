@@ -504,17 +504,60 @@ out:
  * This is useful when we calculate the cumilative mask when we implicitly add a mark which
  * falls in the subtree under this rule. 
  */
-void fsnotify_add_recursive_rule(
-				struct fsnotify_mark *mark, 
-				struct fsnotify_mark_connector *conn) 
+static void fsnotify_update_recursive_rule(struct fsnotify_mark *mark, 
+				struct fsnotify_mark_connector *conn,
+				int add) 
 {
-	
-	hlist_add_head_rcu(&mark->obj_list, &conn->r_list);
-	conn->flags |= FSNOTIFY_OBJ_TYPE_REC_RULE;
-	atomic_inc(&conn->nrules);
+	if(add) {
+		hlist_add_head_rcu(&mark->mark_list, &conn->r_list);
+		conn->flags |= FSNOTIFY_OBJ_TYPE_REC_RULE;
+		atomic_inc(&conn->nrules);
+		mark->flags |= FSNOTIFY_MARK_FLAG_RULE;
+	}
 	atomic_inc(&g_rutime);
 	atomic_set(&conn->r_utime, g_rutime);
 }
+
+int fsnotify_update_recursive_mark(struct fsnotify_mark_connector __rcu **connp,
+				struct fsnotify_mark *mark
+				int add)
+{
+	struct fsnotify_mark_connector *conn;
+	conn = fsnotify_grab_connector(connp);
+	if(!conn) {
+		return -EFAULT;
+	}
+	fsnotify_update_recursive_rule(fsn_mark, conn, add);
+	spin_unlock(&conn->lock);
+	return 0;
+}
+
+int fsnotify_destroy_recursive_mark(struct fsnotify_mark *mark,
+				    struct fsnotify_group *group,
+				    u32 spare_mask)
+{
+	struct fsnotify_mark_connector *conn;
+	conn = mark->connector;
+	if(!conn) {
+		return -EINVAL;
+	}
+	mutex_lock_nested(&group->mark_mutex, SINGLE_DEPTH_NESTING);
+	spin_lock(&mark->lock);
+	spin_lock(&conn->lock);
+	mark->mask = spare_mask;
+	__fsnotify_recalc_mask(conn);
+	if(mark->flags & FSNOTIFY_MARK_FLAG_RULE)
+		mark->flags &= ~(FSNOTIFY_MARK_FLAG_RULE);
+	if(hlist_empty(&conn->r_list)) {
+		conn->flags &= ~(FSNOTIFY_OBJ_TYPE_REC_RULE);
+	}	
+	spin_unlock(&conn->lock);
+	spin_unlock(&mark->lock);
+	mutex_unlock(&group->mark_mutex);
+	return 0;
+}
+
+
 #endif /* CONFIG_FSNOTIFY_RECURSIVE */
 
 /*
@@ -523,9 +566,15 @@ void fsnotify_add_recursive_rule(
  * to which group and for which inodes. These marks are ordered according to
  * priority, highest number first, and then by the group's location in memory.
  */
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+static int fsnotify_add_mark_list(struct fsnotify_mark *mark,
+				  struct inode *inode, struct vfsmount *mnt,
+				  int allow_dups, int implicit_rec_add)
+#else
 static int fsnotify_add_mark_list(struct fsnotify_mark *mark,
 				  struct inode *inode, struct vfsmount *mnt,
 				  int allow_dups)
+#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 {
 	struct fsnotify_mark *lmark, *last = NULL;
 	struct fsnotify_mark_connector *conn;
@@ -550,10 +599,10 @@ restart:
 		goto restart;
 	}
 #ifdef CONFIG_FSNOTIFY_RECURSIVE
-	if(mark->mask & FS_RECURSIVE_ADD) {
-		err = fsnotify_add_recursive_rule(mark, conn);
-		if(err)
-			return err;
+	/* add mark to the rule list if user explicitly requests with the flag */
+	if(!implicit_rec_add && (mark->mask & FS_RECURSIVE_ADD)) {
+		mark->flags |= FSNOTIFY_MARK_FLAG_RULE;	
+		fsnotify_update_recursive_mark(mark, conn, 1);
 	}
 #endif /* CONFIG_FSNOTIFY_RECURSIVE */
 	/* is mark the first mark? */
@@ -596,8 +645,13 @@ out_err:
  * These marks may be used for the fsnotify backend to determine which
  * event types should be delivered to which group.
  */
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+int fsnotify_add_mark_locked(struct fsnotify_mark *mark, struct inode *inode,
+			     struct vfsmount *mnt, int allow_dups, int implicit_rec_add)
+#else
 int fsnotify_add_mark_locked(struct fsnotify_mark *mark, struct inode *inode,
 			     struct vfsmount *mnt, int allow_dups)
+#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 {
 	struct fsnotify_group *group = mark->group;
 	int ret = 0;
@@ -619,8 +673,11 @@ int fsnotify_add_mark_locked(struct fsnotify_mark *mark, struct inode *inode,
 	atomic_inc(&group->num_marks);
 	fsnotify_get_mark(mark); /* for g_list */
 	spin_unlock(&mark->lock);
-
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+	ret = fsnotify_add_mark_list(mark, inode, mnt, allow_dups, implicit_rec_add);
+#else
 	ret = fsnotify_add_mark_list(mark, inode, mnt, allow_dups);
+#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 	if (ret)
 		goto err;
 
@@ -631,6 +688,10 @@ int fsnotify_add_mark_locked(struct fsnotify_mark *mark, struct inode *inode,
 err:
 	mark->flags &= ~(FSNOTIFY_MARK_FLAG_ALIVE |
 			 FSNOTIFY_MARK_FLAG_ATTACHED);
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+	if(mark->flags & FSNOTIFY_MARK_FLAG_RULE)
+		mark->flags &= ~(FSNOTIFY_MARK_FLAG_RULE);
+#endif 
 	list_del_init(&mark->g_list);
 	atomic_dec(&group->num_marks);
 

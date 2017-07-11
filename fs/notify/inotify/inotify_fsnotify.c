@@ -116,9 +116,19 @@ int inotify_handle_event(struct fsnotify_group *group,
 		fsnotify_destroy_event(group, fsn_event);
 	}
 
-	if (inode_mark->mask & IN_ONESHOT)
+	if (inode_mark->mask & IN_ONESHOT) {
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+		/* 
+		 * if this is a rule and there is a non-recursive watch added earlier
+		 * make this a non-recursive mark 
+		 */
+		if((i_mark->spare_mask) && (inode_mark.flags & FSNOTIFY_MARK_FLAG_RULE)) {
+			ret = fsnotify_destroy_recursive_mark(&i_mark->fsn_mark, group, i_mark->spare_mask);
+                	return ret;	
+		}
+#endif
 		fsnotify_destroy_mark(inode_mark, group);
-
+	}
 	return 0;
 }
 

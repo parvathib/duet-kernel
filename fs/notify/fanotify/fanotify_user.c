@@ -634,7 +634,11 @@ static struct fsnotify_mark *fanotify_add_new_mark(struct fsnotify_group *group,
 		return ERR_PTR(-ENOMEM);
 
 	fsnotify_init_mark(mark, group);
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+	ret = fsnotify_add_mark_locked(mark, inode, mnt, 0, 0);
+#else
 	ret = fsnotify_add_mark_locked(mark, inode, mnt, 0);
+#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 	if (ret) {
 		fsnotify_put_mark(mark);
 		return ERR_PTR(ret);

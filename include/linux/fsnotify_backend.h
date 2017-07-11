@@ -19,8 +19,13 @@
 #include <linux/user_namespace.h>
 
 #ifdef CONFIG_FSNOTIFY_RECURSIVE
+struct pool_mask{
+	struct fsnotify_group *group;
+	u32 mask;
+	sruct hlist_node hentry;
+};
 atomic_t g_rutime;
-u32 group_masks[128];
+DEFINE_HASHTABLE(pooled_group_masks, 7); //maximum of 128 groups allowed
 #endif /* CONFIG_FSNOTIFY_RECURSIVE */
 /*
  * IN_* from inotfy.h lines up EXACTLY with FS_*, this is so we can easily
@@ -81,12 +86,32 @@ u32 group_masks[128];
 			     FS_ISDIR | FS_IN_ONESHOT | FS_DN_RENAME | \
 			     FS_DN_MULTISHOT | FS_EVENT_ON_CHILD)
 
+#define RECURSIVE_ADD_FSNOTIFY_EVENTS (FS_ATTRIB | FS_CREATE | FS_DELETE | \
+					FS_DELETE_SELF | FS_MOVE_SELF | FS_OPEN \
+					FS_MOVED_FROM | FS_MOVED_TO)
+					
+
 struct fsnotify_group;
 struct fsnotify_event;
 struct fsnotify_mark;
 struct fsnotify_event_private_data;
 struct fsnotify_fname;
 struct fsnotify_iter_info;
+
+static inline bool fsnotify_is_recursive_mark(fsnotify_mark *mark)
+{
+	return ((mark->mask & FS_RECURSIVE_ADD) && !(mark->flags & FSNOTIFY_MARK_FLAG_RULE));
+}
+
+static inline bool fsnotify_is_recursive_mark(fsnotify_mark *mark)
+{
+	return ((mark->mask & FS_RECURSIVE_ADD) && (mark->flags & FSNOTIFY_MARK_FLAG_RULE));
+}
+
+static inline bool fsnotify_is_normal_mark(fsnotify_mark *mark)
+{
+	return (!(mark->mask & FS_RECURSIVE_ADD) && !(mark->flags & FSNOTIFY_MARK_FLAG_RULE));
+}
 
 /*
  * Each group much define these ops.  The fsnotify infrastructure will call
@@ -272,6 +297,10 @@ struct fsnotify_mark {
 	spinlock_t lock;
 	/* List of marks for inode / vfsmount [connector->lock, mark ref] */
 	struct hlist_node obj_list;
+#ifdef CONFIG_FSNOTIFY_RECURSIVE
+	/* List of marks for inode / vfsmount [connector->lock, mark ref] */
+	struct hlist_node rule_list;
+#endif
 	/* Head of list of marks for an object [mark ref] */
 	struct fsnotify_mark_connector *connector;
 	/* Events types to ignore [mark->lock, group->mark_mutex] */
@@ -279,6 +308,7 @@ struct fsnotify_mark {
 #define FSNOTIFY_MARK_FLAG_IGNORED_SURV_MODIFY	0x01
 #define FSNOTIFY_MARK_FLAG_ALIVE		0x02
 #define FSNOTIFY_MARK_FLAG_ATTACHED		0x04
+#define FSNOTIFY_MARK_FLAG_RULE			0x08
 	unsigned int flags;		/* flags [mark->lock] */
 };
 
@@ -364,11 +394,16 @@ extern void fsnotify_init_mark(struct fsnotify_mark *mark,
 extern struct fsnotify_mark *fsnotify_find_mark(
 				struct fsnotify_mark_connector __rcu **connp,
 				struct fsnotify_group *group);
-/* attach the mark to the inode or vfsmount */
 extern int fsnotify_add_mark(struct fsnotify_mark *mark, struct inode *inode,
 			     struct vfsmount *mnt, int allow_dups);
+#ifdef CONFIG_FSNOTIFY_RECURSIVE 
+int fsnotify_add_mark_locked(struct fsnotify_mark *mark, struct inode *inode,
+                             struct vfsmount *mnt, int allow_dups, int implicit_rec_add);
+#else
+/* attach the mark to the inode or vfsmount */
 extern int fsnotify_add_mark_locked(struct fsnotify_mark *mark,
 				    struct inode *inode, struct vfsmount *mnt, int allow_dups);
+#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 /* given a group and a mark, flag mark to be freed when all references are dropped */
 extern void fsnotify_destroy_mark(struct fsnotify_mark *mark,
 				  struct fsnotify_group *group);
