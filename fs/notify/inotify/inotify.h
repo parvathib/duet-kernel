@@ -13,9 +13,7 @@ struct inotify_event_info {
 struct inotify_inode_mark {
 	struct fsnotify_mark fsn_mark;
 	int wd;
-#ifdef CONFIG_FSNOTIFY_RECURSIVE
 	u32 spare_mask;
-#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 };
 
 static inline struct inotify_event_info *INOTIFY_E(struct fsnotify_event *fse)

@@ -288,7 +288,7 @@ static void untag_chunk(struct node *p)
 		goto Fallback;
 
 	if (fsnotify_add_mark_locked(&new->mark, entry->connector->inode,
-				     NULL, 1)) {
+				     NULL, 1, 0)) {
 		fsnotify_put_mark(&new->mark);
 		goto Fallback;
 	}
@@ -434,7 +434,7 @@ static int tag_chunk(struct inode *inode, struct audit_tree *tree)
 	}
 
 	if (fsnotify_add_mark_locked(chunk_entry,
-			     old_entry->connector->inode, NULL, 1)) {
+			     old_entry->connector->inode, NULL, 1, 0)) {
 		spin_unlock(&old_entry->lock);
 		mutex_unlock(&old_entry->group->mark_mutex);
 		fsnotify_put_mark(chunk_entry);

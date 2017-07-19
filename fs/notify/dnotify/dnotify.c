@@ -319,11 +319,7 @@ int fcntl_dirnotify(int fd, struct file *filp, unsigned long arg)
 		dn_mark = container_of(fsn_mark, struct dnotify_mark, fsn_mark);
 		spin_lock(&fsn_mark->lock);
 	} else {
-#ifdef CONFIG_FSNOTIFY_RECURSIVE
 		fsnotify_add_mark_locked(new_fsn_mark, inode, NULL, 0, 0);
-#else
-		fsnotify_add_mark_locked(new_fsn_mark, inode, NULL, 0);
-#endif
 		spin_lock(&new_fsn_mark->lock);
 		fsn_mark = new_fsn_mark;
 		dn_mark = new_dn_mark;

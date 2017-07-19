@@ -17,16 +17,8 @@
 #include <linux/types.h>
 #include <linux/atomic.h>
 #include <linux/user_namespace.h>
+#include <linux/hashtable.h>
 
-#ifdef CONFIG_FSNOTIFY_RECURSIVE
-struct pool_mask{
-	struct fsnotify_group *group;
-	u32 mask;
-	sruct hlist_node hentry;
-};
-atomic_t g_rutime;
-DEFINE_HASHTABLE(pooled_group_masks, 7); //maximum of 128 groups allowed
-#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 /*
  * IN_* from inotfy.h lines up EXACTLY with FS_*, this is so we can easily
  * convert between them.  dnotify only needs conversion at watch creation
@@ -98,20 +90,6 @@ struct fsnotify_event_private_data;
 struct fsnotify_fname;
 struct fsnotify_iter_info;
 
-static inline bool fsnotify_is_recursive_mark(fsnotify_mark *mark)
-{
-	return ((mark->mask & FS_RECURSIVE_ADD) && !(mark->flags & FSNOTIFY_MARK_FLAG_RULE));
-}
-
-static inline bool fsnotify_is_recursive_mark(fsnotify_mark *mark)
-{
-	return ((mark->mask & FS_RECURSIVE_ADD) && (mark->flags & FSNOTIFY_MARK_FLAG_RULE));
-}
-
-static inline bool fsnotify_is_normal_mark(fsnotify_mark *mark)
-{
-	return (!(mark->mask & FS_RECURSIVE_ADD) && !(mark->flags & FSNOTIFY_MARK_FLAG_RULE));
-}
 
 /*
  * Each group much define these ops.  The fsnotify infrastructure will call
@@ -241,9 +219,7 @@ struct fsnotify_mark_connector {
 	spinlock_t lock;
 #define FSNOTIFY_OBJ_TYPE_INODE		0x01
 #define FSNOTIFY_OBJ_TYPE_VFSMOUNT	0x02
-#ifdef CONFIG_FSNOTIFY_RECURSIVE
 #define FSNOTIFY_OBJ_TYPE_REC_RULE	0x04
-#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 #define FSNOTIFY_OBJ_ALL_TYPES		(FSNOTIFY_OBJ_TYPE_INODE | \
 					 FSNOTIFY_OBJ_TYPE_VFSMOUNT)
 	unsigned int flags;	/* Type of object [lock] */
@@ -256,14 +232,10 @@ struct fsnotify_mark_connector {
 		/* Used listing heads to free after srcu period expires */
 		struct fsnotify_mark_connector *destroy_next;
 	};
-#ifdef CONFIG_FSNOTIFY_RECURSIVE
 	struct {
-		atomic_t nrules;                /* number of rules on inode r_ino */
 		atomic_t r_utime;		/* Rule updated time */
 		struct hlist_head r_list;       /* list of the recursive rules added by the user for this inode */
 	};
-#endif /* CONFIG_FSNOTIFY_RECURSIVE */:w
-
 };
 
 /*
@@ -297,10 +269,8 @@ struct fsnotify_mark {
 	spinlock_t lock;
 	/* List of marks for inode / vfsmount [connector->lock, mark ref] */
 	struct hlist_node obj_list;
-#ifdef CONFIG_FSNOTIFY_RECURSIVE
 	/* List of marks for inode / vfsmount [connector->lock, mark ref] */
 	struct hlist_node rule_list;
-#endif
 	/* Head of list of marks for an object [mark ref] */
 	struct fsnotify_mark_connector *connector;
 	/* Events types to ignore [mark->lock, group->mark_mutex] */
@@ -323,6 +293,21 @@ extern int __fsnotify_parent(const struct path *path, struct dentry *dentry, __u
 extern void __fsnotify_inode_delete(struct inode *inode);
 extern void __fsnotify_vfsmount_delete(struct vfsmount *mnt);
 extern u32 fsnotify_get_cookie(void);
+
+static inline bool fsnotify_is_recursive_mark(struct fsnotify_mark *mark)
+{
+	return ((mark->mask & FS_RECURSIVE_ADD) && !(mark->flags & FSNOTIFY_MARK_FLAG_RULE));
+}
+
+static inline bool fsnotify_is_rule_mark(struct fsnotify_mark *mark)
+{
+	return ((mark->mask & FS_RECURSIVE_ADD) && (mark->flags & FSNOTIFY_MARK_FLAG_RULE));
+}
+
+static inline bool fsnotify_is_normal_mark(struct fsnotify_mark *mark)
+{
+	return (!(mark->mask & FS_RECURSIVE_ADD) && !(mark->flags & FSNOTIFY_MARK_FLAG_RULE));
+}
 
 static inline int fsnotify_inode_watches_children(struct inode *inode)
 {
@@ -396,14 +381,8 @@ extern struct fsnotify_mark *fsnotify_find_mark(
 				struct fsnotify_group *group);
 extern int fsnotify_add_mark(struct fsnotify_mark *mark, struct inode *inode,
 			     struct vfsmount *mnt, int allow_dups);
-#ifdef CONFIG_FSNOTIFY_RECURSIVE 
 int fsnotify_add_mark_locked(struct fsnotify_mark *mark, struct inode *inode,
                              struct vfsmount *mnt, int allow_dups, int implicit_rec_add);
-#else
-/* attach the mark to the inode or vfsmount */
-extern int fsnotify_add_mark_locked(struct fsnotify_mark *mark,
-				    struct inode *inode, struct vfsmount *mnt, int allow_dups);
-#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 /* given a group and a mark, flag mark to be freed when all references are dropped */
 extern void fsnotify_destroy_mark(struct fsnotify_mark *mark,
 				  struct fsnotify_group *group);
@@ -432,6 +411,11 @@ extern bool fsnotify_prepare_user_wait(struct fsnotify_iter_info *iter_info);
 /* put here because inotify does some weird stuff when destroying watches */
 extern void fsnotify_init_event(struct fsnotify_event *event,
 				struct inode *to_tell, u32 mask);
+
+/* Add/update the recursive rule mark to the list of rules */
+extern int fsnotify_update_recursive_mark(struct fsnotify_mark_connector __rcu **connp,
+				struct fsnotify_mark *mark,
+				int add);
 
 #else
 

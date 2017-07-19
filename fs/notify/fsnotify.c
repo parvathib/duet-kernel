@@ -23,12 +23,10 @@
 #include <linux/module.h>
 #include <linux/mount.h>
 #include <linux/srcu.h>
-#include <atomic.h>
 
 #include <linux/fsnotify_backend.h>
 #include "fsnotify.h"
 
-atomic_t r_utime;
 
 /*
  * Clear all of the marks on an inode when it is being evicted from core
@@ -241,120 +239,23 @@ static int send_to_group(struct inode *to_tell,
 					vfsmount_mark, mask, data, data_is,
 					file_name, cookie, iter_info);
 }
-#ifdef CONFIG_FSNOTIFY_RECURSIVE
 
-struct pool_mask *fsnotify_find_hnode(struct fsnotify_group *group) 
+struct dentry *fsnotify_get_dentry(struct inode* inode, 
+				const unsigned char *file_name, 
+				unsigned char *path_name)
 {
-	struct pool_mask *pmask_node;
-	hash_for_each_possible(pooled_group_masks, pmask_node, hentry, (unsigned long)group)
-	return pmask_node;
-}
-
-int fsnotify_add_hnode(struct pool_mask *hnode, struct fsnotify_group *group)
-{
-	int alloc_len sizeof(struct pool_mask);
-	hnode = kmalloc(alloc_len, GFP_KERNEL);
-	if(unlikely(!hnode)) {
-		return -ENOMEM; 	
+	if(hlist_empty(&inode->i_dentry)) {
+		return NULL;	
 	}
-	hnode->group = group;
-	hash_add(pooled_group_masks, &hnode->hentry, (unsigned long)group)
-	return 0		
-}
-
-int fsnotify_calculate_mask(struct *inode) 
-{
-	struct hlist_node *inode_node = NULL, *vfsmount_node = NULL;
-	struct fsnotify_mark *inode_mark = NULL, *vfsmount_mark = NULL;
-	struct fsnotify_group *inode_group, *vfsmount_group;
-	struct fsnotify_mark_connector *inode_conn, *vfsmount_conn;
-	struct fsnotify_iter_info iter_info;
-	struct pool_mask *hash_node;
-	int ret = 0;
-	iter_info.srcu_idx = srcu_read_lock(&fsnotify_mark_srcu);
-	if(inode->i_fsnotify_mask) {
-		inode_conn = srcu_dereference(inode->i_fsnotify_marks,
-			      			&fsnotify_mark_srcu);
-		/* Get the reference of head of rules list for this inode */	
-		if (inode_conn) {
-			if(inode_conn->flags & FSNOTIFY_OBJ_TYPE_REC_RULE) { /* This is not a rule inode. Don't waste time */
-				goto out;
-			}
-			inode_node = srcu_dereference(inode_conn->r_list.first,
-				     			&fsnotify_mark_srcu);
-		}
-	}
-	while(inode_node) {
-		inode_group = NULL; 
-		inode_mark = NULL;
-		/* Iterate over the mark list */
-		inode_mark = hlist_entry(srcu_dereference(inode_node, &fsnotify_mark_srcu),
-					 struct fsnotify_mark, rule_list);
-		inode_group = inode_mark->group;
-			
-		if(inode_group && (inode_mark->flags & FSNOTIFY_MARK_FLAG_RULE)) {
-			hash_node = fsnotify_find_hnode(inode_group);
-			if(!hash_node) {
-				ret = fsnotify_add_hnode(hash_node, inode_group);
-				if(ret)
-					goto out;
-			}
-			hash_node->mask |= inode_mark->mask; 
-		}
-		inode_node = srcu_dereference(inode_node->next,
-						      &fsnotify_mark_srcu);	
-	}
-out:
-	srcu_read_unlock(&fsnotify_mark_srcu, iter_info.srcu_idx);
-	return ret;
-}
-
-void fsnotify_free_pooled_masks()
-{
-	int bkt;
-	struct pool_mask *pmask_node;
-	hash_for_each(pooled_group_masks, bkt, pmask_node, hentry) {
-		hash_del(&pmask_node->hentry);
-		kfree(pmask_node);
-	} 
-}
-
-
-int fsnotify_calculate_recursive_masks(struct inode *inode, struct mount *mnt) 
-{
-	struct mount *mnt;
-	struct dentry *dentry, *parent, *old_parent = NULL;
-	struct inode *p_inode;
-	int ret = 0;
-	hash_init(pooled_group_masks);
-	
-	dentry = d_find_alias(inode);
-	if(!detry)
-		return -ENOENT;
-	if(IS_ROOT(dentry)) { //If this is the root directory, no need to pool the masks
-		ret = 0;
-		goto out;
-	}
-	parent = dentry;
-	while(1) {
-
-		if(IS_ROOT(parent) || (ret)) { //Once you reach root, stop climbing up:
+	hlist_for_each_entry(alias, &inode->i_dentry, d_u.d_alias) {
+		if (IS_ROOT(alias) && (alias->d_flags & DCACHE_DISCONNECTED))
+			continue;
+		if(!strcmp(alias->d_name.name, file_name)){
 			break;
 		}
-		parent = dget_parent(parent);
-		dput(old_parent);
-		old_parent = parent;
-		inode = d_inode(parent);
-		ret = fsnotify_calculate_mask(inode);
 	}
-	dput(old_parent);
-out:	
-	dput(dentry);
-	return 0;
+	return alias;
 }
-
-
-#endif /* CONFIG_FSNOTIFY_RECURSIVE */
 
 /*
  * This is the main call to fsnotify.  The VFS calls into hook specific functions
@@ -380,7 +281,7 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 		mnt = real_mount(((const struct path *)data)->mnt);
 	else
 		mnt = NULL;
-
+	fsnotify_apply_recursive_rules(to_tell, mnt, file_name);
 	/*
 	 * Optimization: srcu_read_lock() has a memory barrier which can
 	 * be expensive.  It protects walking the *_fsnotify_marks lists.
@@ -407,9 +308,12 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	    (test_mask & to_tell->i_fsnotify_mask)) {
 		inode_conn = srcu_dereference(to_tell->i_fsnotify_marks,
 					      &fsnotify_mark_srcu);
-		if (inode_conn)
+		if (inode_conn) {
+			inode_rule_time = scru_dereference(inode_conn->r_utime, &fsnotify_mark_srcu);
+			fsnotify_apply_recursive_rules(to_tell, mnt, file_name);
 			inode_node = srcu_dereference(inode_conn->list.first,
 						      &fsnotify_mark_srcu);
+		}
 	}
 
 	if (mnt && ((mask & FS_MODIFY) ||
