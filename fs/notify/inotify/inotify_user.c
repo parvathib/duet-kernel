@@ -537,7 +537,6 @@ int inotify_new_watch(struct fsnotify_group *group,
 		implicit_rec_watch = 1; 
 	} else { 
 		/* Explicit add watch. Allocate a new wd. */
-		tmp_i_mark->fsn_mark.spare_mask = mask;
 		ret = inotify_add_to_idr(idr, idr_lock, tmp_i_mark);
 		if (ret)
 			goto out_err;
