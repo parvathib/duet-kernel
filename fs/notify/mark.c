@@ -174,7 +174,7 @@ void fsnotify_update_existing_mark(struct fsnotify_mark *mark,
 	int ret;
 	int add_rule = 0;
 	int save_spare_mask = 0;
-	u32 spare_mask;
+	u32 spare_mask = 0;
 
 	spin_lock(&mark->lock);
 	old_mask = mark->mask;
@@ -200,6 +200,7 @@ void fsnotify_update_existing_mark(struct fsnotify_mark *mark,
 		if(fsnotify_is_normal_mark(mark) || fsnotify_is_rule_mark(mark)) { // If the current mark is R or N : Save the mask in spare_mask.
 			save_spare_mask = 1;
 			spare_mask = old_mask;
+			mask &= ~(FS_RECURSIVE_ADD);
 		}
 	}
 	if(!implicit_rec_watch && (mask & FS_RECURSIVE_ADD)) {
