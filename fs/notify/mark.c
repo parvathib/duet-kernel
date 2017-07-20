@@ -107,6 +107,7 @@ struct pool_mask{
 	struct fsnotify_group *group;
 	u32 mask;
 	u32 updated;
+	u32 private_id;
 	struct hlist_node hentry;
 };
 atomic_t g_rutime;
@@ -163,6 +164,75 @@ void fsnotify_recalc_mask(struct fsnotify_mark_connector *conn)
 		__fsnotify_update_child_dentry_flags(conn->inode);
 }
 
+void fsnotify_update_existing_mark(struct fsnotify_mark *mark, 
+				struct inode *inode, 
+				u32 mask, 
+				int implicit_rec_watch,
+				int add) 
+{
+	u32 old_mask, new_mask;
+	int ret;
+	int add_rule = 0;
+	int save_spare_mask = 0;
+	u32 spare_mask;
+
+	spin_lock(&mark->lock);
+	old_mask = mark->mask;
+	
+	if(!implicit_rec_watch) { //explicit add request
+		if((fsnotify_is_rule_mark(mark) && !(mask & FS_RECURSIVE_ADD)) || // Re & N : Don't allow.
+			(fsnotify_is_normal_mark(mark) && (mask & FS_RECURSIVE_ADD))){  // N & Re : Don't allow.
+			ret = -EINVAL;
+			spin_unlock(&mark->lock);
+			goto end;
+		}
+		if(fsnotify_is_recursive_mark(mark)){ // If it Ri & (Re or N), always add the mask. The mark becomes of type N or Re 
+			add = 1; 
+			save_spare_mask = 1;
+			spare_mask = mask;
+			if(mask & FS_RECURSIVE_ADD) //If it is Ri & Re, add the rule to the list
+				add_rule = 1;
+			else //if Ri & N, make it a normal node. 
+				mark->mask &= ~(FS_RECURSIVE_ADD);
+		}
+	}
+	if((mask & FS_RECURSIVE_ADD) && (implicit_rec_watch)) { // implicit add request (Ri)
+		if(fsnotify_is_normal_mark(mark) || fsnotify_is_rule_mark(mark)) { // If the current mark is R or N : Save the mask in spare_mask.
+			save_spare_mask = 1;
+			spare_mask = old_mask;
+		}
+	}
+	if(!implicit_rec_watch && (mask & FS_RECURSIVE_ADD)) {
+		ret = fsnotify_update_recursive_mark_list(&inode->i_fsnotify_marks, mark, add_rule); //add/update rule 
+		if(!ret) {
+			spin_unlock(&mark->lock);
+			goto end;
+		}		
+	}
+	if(!mark->spare_mask)
+		mark->spare_mask = spare_mask;
+
+	if (add)
+		mark->mask |= mask;
+	else
+		mark->mask = mask;
+
+	new_mask = mark->mask;
+	spin_unlock(&mark->lock);
+
+	if (old_mask != new_mask) {
+		/* more bits in old than in new? */
+		int dropped = (old_mask & ~new_mask);
+		/* more bits in this mark than the inode's mask? */
+		int do_inode = (new_mask & ~inode->i_fsnotify_mask);
+
+		/* update the inode with this new mark */
+		if (dropped || do_inode)
+			fsnotify_recalc_mask(inode->i_fsnotify_marks);
+
+	}
+	return;
+}
 /* Free all connectors queued for freeing once SRCU period ends */
 static void fsnotify_connector_destroy_workfn(struct work_struct *work)
 {
@@ -511,7 +581,7 @@ out:
  * This is useful when we calculate the cumilative mask when we implicitly add a mark which
  * falls in the subtree under this rule. 
  */
-static void fsnotify_update_recursive_rule(struct fsnotify_mark_connector *conn,
+static void __fsnotify_update_recursive_mark_list(struct fsnotify_mark_connector *conn,
 				struct fsnotify_mark *mark, int add) 
 {
 	int rutime;
@@ -524,7 +594,7 @@ static void fsnotify_update_recursive_rule(struct fsnotify_mark_connector *conn,
 	atomic_inc(&g_rutime);
 }
 
-int fsnotify_update_recursive_mark(struct fsnotify_mark_connector __rcu **connp,
+int fsnotify_update_recursive_mark_list(struct fsnotify_mark_connector __rcu **connp,
 				struct fsnotify_mark *mark,
 				int add)
 {
@@ -533,7 +603,7 @@ int fsnotify_update_recursive_mark(struct fsnotify_mark_connector __rcu **connp,
 	if(!conn) {
 		return -EFAULT;
 	}
-	fsnotify_update_recursive_rule(conn, mark, add);
+	__fsnotify_update_recursive_mark_list(conn, mark, add);
 	spin_unlock(&conn->lock);
 	return 0;
 }
@@ -549,7 +619,6 @@ int fsnotify_destroy_recursive_mark(struct fsnotify_mark *mark,
 	}
 	mutex_lock_nested(&group->mark_mutex, SINGLE_DEPTH_NESTING);
 	spin_lock(&mark->lock);
-	spin_lock(&conn->lock);
 	if(!mark->spare_mask) {
 		ret = -ENOENT;
 		goto out;
@@ -560,11 +629,12 @@ int fsnotify_destroy_recursive_mark(struct fsnotify_mark *mark,
 		if(mark->flags & FSNOTIFY_MARK_FLAG_RULE)
 			mark->flags &= ~(FSNOTIFY_MARK_FLAG_RULE);
 		if(hlist_empty(&conn->r_list)) {
+			spin_lock(&conn->lock);
 			conn->flags &= ~(FSNOTIFY_OBJ_TYPE_REC_RULE);
+			spin_unlock(&conn->lock);
 		}	
 	}
 out:
-	spin_unlock(&conn->lock);
 	spin_unlock(&mark->lock);
 	mutex_unlock(&group->mark_mutex);
 	return ret;
@@ -589,6 +659,13 @@ int fsnotify_add_hnode(struct pool_mask *hnode, struct fsnotify_group *group)
 	return 0;	
 }
 
+int fsnotify_init_hnode(struct pool_mask *hnode, struct fsnotify_group *group)
+{
+	int alloc_len = sizeof(struct pool_mask);
+	memset(hnode, 0,, alloc_len);
+	hnode->group = group;
+	return 0;	
+}
 void fsnotify_free_pooled_masks(void)
 {
 	int bkt;
@@ -605,23 +682,27 @@ void fsnotify_update_inode_rule_time(struct fsnotify_mark_connector __rcu **conn
 	spin_unlock(&conn->lock);
 	return;	
 }
-int fsnotify_calculate_mask(struct fsnotify_mark_connector *inode_conn) 
+int __fsnotify_update_marks_inode(struct inode *inode) 
 {
+	struct fsnotify_mark_connector *inode_conn;	
 	struct hlist_node *inode_node = NULL, *vfsmount_node = NULL, *rule_node = NULL;
 	struct fsnotify_mark *inode_mark = NULL, *vfsmount_mark = NULL;
 	struct fsnotify_group *inode_group, *vfsmount_group;
 	struct fsnotify_iter_info iter_info;
 	struct pool_mask *hash_node;
 	int ret = 0;
-	u32 old_mask = 0;
 	u32 new_mask = 0;
 	u32 orig_mask = 0;
 	iter_info.srcu_idx = srcu_read_lock(&fsnotify_mark_srcu);
-	/* Get the reference of head of rules list for this inode */	
-	if (inode_conn) {
-		rule_node = srcu_dereference(inode_conn->r_list.first,
-						&fsnotify_mark_srcu);
+	
+	inode_conn = srcu_dereference(inode->i_fsnotify_marks, &fsnotify_mark_srcu);
+	if(!inode_conn) { 
+		ret =  -EINVAL;
+		goto out;
 	}
+	/* Get the reference of head of rules list for this inode */	
+	rule_node = srcu_dereference(inode_conn->r_list.first,
+						&fsnotify_mark_srcu);
 	while(rule_node) { /* Only rules node will execute this code */
 		inode_group = NULL; 
 		inode_mark = NULL;
@@ -629,8 +710,16 @@ int fsnotify_calculate_mask(struct fsnotify_mark_connector *inode_conn)
 		inode_mark = hlist_entry(srcu_dereference(rule_node, &fsnotify_mark_srcu),
 					 struct fsnotify_mark, rule_list);
 		inode_group = inode_mark->group;
-		old_mask = inode_mark->mask;
-		orig_mask =  inode_mark->spare_mask;			
+		/*
+		 * 1. for each rule, check if the hash node exists to be updated or create it
+		 * 2. update the hash node: get the new updated mask (old mask | orig_mask). 
+		 *    call the updating mark function. Mark the hash node is updated on the hash node and 
+		 * 3. If hash table is not empty, check if the rest of the marks need to be updated or not.
+		 *    for each mark in the marks list, if there is an entry in the hash table which is not updated,
+		 *    call update mark. 
+		 * 4. Go through the hash list and check if there are any hash nodes which are yet to be updated. 
+		 *    As you leave the hash nodes, reset the bit.
+		 */ 
 		if(inode_group && (inode_mark->flags & FSNOTIFY_MARK_FLAG_RULE)) {
 			hash_node = fsnotify_find_hnode(inode_group);
 			if(!hash_node) {
@@ -638,12 +727,12 @@ int fsnotify_calculate_mask(struct fsnotify_mark_connector *inode_conn)
 				if(ret)
 					goto out;
 			}
-			new_mask = hash_node->mask | inode_mark->mask;
-			if(old_mask == new_mask) {
-				hash_node->updated = 0;
-				continue;
-			} 
-			hash_node->mask = new_mask;
+			orig_mask =  inode_mark->spare_mask;			
+			new_mask = hash_node->mask | orig_mask;
+			fsnotify_update_existing_mark(inode_mark, inode, new_mask, 0); 
+			hash_node->mask = inode_mark->mark;
+			
+			
 		}
 		rule_node = srcu_dereference(rule_node->next,
 						      &fsnotify_mark_srcu);	
@@ -651,14 +740,12 @@ int fsnotify_calculate_mask(struct fsnotify_mark_connector *inode_conn)
 
 	
 	/* start adding/updating the marks at this node */
-	if(!hash_empty(pooled_group_masks)){ 
-	
-		int bkt;
-		struct pool_mask *pmask_node;
-		hash_for_each(pooled_group_masks, bkt, pmask_node, hentry) {
-			hash_del(&pmask_node->hentry);
-			kfree(pmask_node);
-		} 
+	if(hash_empty(pooled_group_masks))
+		goto out;
+	inode_node = srcu_dereference(inode_conn->list.first,
+					      &fsnotify_mark_srcu);
+	while(inode_node) {
+			
 	}
 	
 out:
@@ -666,23 +753,39 @@ out:
 	return ret;
 }
 
-
-int fsnotify_update_mark(struct dentry *dentry, struct inode *inode)
+int  fsnotify_is_latest(struct inode *inode) 
 {
+	int ret = 0;
 	int idx;
-	struct fsnotify_mark_connector *conn;	
-	dget(dentry);
-	idx = srcu_read_lock(&fsnotify_mark_srcu); 
-	conn = srcu_dereference(inode->i_fsnotify_marks, &fsnotify_mark_srcu);
-	if(!conn) {
-		return -EINVAL;
+	if (inode)
+		connp = &inode->i_fsnotify_marks;
+	else
+		connp = &real_mount(mnt)->mnt_fsnotify_marks;
+	/* dereference this inode connector */
+	idx = srcu_read_lock(&fsnotify_mark_srcu);
+	conn = srcu_dereference(*connp, &fsnotify_mark_srcu);
+	if (atomic_read(&conn->r_utime) == atomic_read(&g_rutime)) {
+		ret = 1;
 	}
-	if(IS_ROOT(dentry) || (atomic_read(&conn->r_utime) == atomic_read(&g_rutime))) {
-			
-	}
-	
 	srcu_read_unlock(&fsnotify_mark_srcu, idx);
+	return ret;
+}
+
+int fsnotify_update_marks_inodes(struct dentry *dentry, struct inode *inode)
+{
+	struct dentry *parent;
+	dget(dentry);
+	if(IS_ROOT(dentry) || fsnotify_is_latest(inode)) {
+		ret =  __fsnotify_update_marks_inode(inode);
+		goto out;
+	}
+	parent = dget_parent(dentry);
+	ret = fsnotify_update_marks_inodes(parent, d_inode(parent));
+	if(!ret)
+		ret = __fsnotify_update_marks_inode(inode);
+out:	
 	dput(dentry);
+	return ret;
 }
 
 struct dentry *fsnotify_get_dentry(struct inode* inode,
@@ -767,17 +870,8 @@ int fsnotify_apply_recursive_rules(struct inode *inode, struct mount *mnt,
 	struct fsnotify_mark_connector __rcu **connp;
 	struct fsnotify_mark_connector *conn;
 	struct dentry *i_dentry = NULL;
-	int idx;
-	if (inode)
-		connp = &inode->i_fsnotify_marks;
-	else
-		connp = &real_mount(mnt)->mnt_fsnotify_marks;
-	/* dereference this inode connector */
-	idx = srcu_read_lock(&fsnotify_mark_srcu);
-	conn = srcu_dereference(*connp, &fsnotify_mark_srcu);
 	/* If the global and inode rule update time stamps match, return */
-	if(conn && (atomic_read(&conn->r_utime) == atomic_read(&g_rutime))) {
-		srcu_read_unlock(&fsnotify_mark_srcu, idx);
+	if(fsnotify_is_latest(inode)) {
 		return ret;	
 	}
 	if(!file_name) {
@@ -786,8 +880,8 @@ int fsnotify_apply_recursive_rules(struct inode *inode, struct mount *mnt,
 	else {
 		i_dentry = d_find_alias(inode);
 	}
-	ret = fsnotify_calculate_recursive_masks(inode, mnt, i_dentry);
-		
+	ret = fsnotify_update_marks_inodes(i_dentry, inode); //TODO: should add support for vfsmount
+	return ret;		
 }
 
 
@@ -826,7 +920,7 @@ restart:
 	}
 	/* add mark to the rule list if user explicitly requests with the flag */
 	if(!implicit_rec_add && (mark->mask & FS_RECURSIVE_ADD)) {
-		fsnotify_update_recursive_rule(conn, mark, 1);
+		__fsnotify_update_recursive_mark_list(conn, mark, 1);
 	}
 	/* is mark the first mark? */
 	if (hlist_empty(&conn->list)) {
@@ -1044,7 +1138,7 @@ void fsnotify_init_mark(struct fsnotify_mark *mark,
 	atomic_set(&mark->refcnt, 1);
 	fsnotify_get_group(group);
 	mark->group = group;
-	mark->spare_mark = 0	mark->spare_mark = 0;;
+	mark->spare_mask = 0;	
 }
 
 /*

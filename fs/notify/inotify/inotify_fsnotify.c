@@ -34,6 +34,7 @@
 
 #include "inotify.h"
 
+extern int inotify_get_pvt_data(struct fsnotify_mark *mark);
 /*
  * Check if 2 events contain the same information.
  */
@@ -61,6 +62,13 @@ static int inotify_merge(struct list_head *list,
 
 	last_event = list_entry(list->prev, struct fsnotify_event, list);
 	return event_compare(last_event, event);
+}
+/* fsnotify has no idea what is the wd of the mark. we use this handler to get the wd */
+int inotify_get_pvt_data(struct fsnotify_mark *mark) 
+{
+	struct inotify_inode_mark *i_mark;
+	i_mark = container_of(fsn_mark, struct inotify_inode_mark, fsn_mark);
+	return i_mark->wd;
 }
 
 int inotify_handle_event(struct fsnotify_group *group,
@@ -202,4 +210,6 @@ const struct fsnotify_ops inotify_fsnotify_ops = {
 	.free_event = inotify_free_event,
 	.freeing_mark = inotify_freeing_mark,
 	.free_mark = inotify_free_mark,
+	.get_pvt_info = inotify_get_pvt_info,
+	.add_new_mark = inotify_new_watch,
 };

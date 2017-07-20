@@ -489,76 +489,16 @@ static int inotify_update_existing_watch(struct fsnotify_group *group,
 {
 	struct fsnotify_mark *fsn_mark;
 	struct inotify_inode_mark *i_mark;
-	struct fsnotify_mark_connector *conn;
-	__u32 old_mask, new_mask;
-	__u32 mask;
-	int add = (arg & IN_MASK_ADD);
+	int add = !!(arg & IN_MASK_ADD);
+	__u32 mask = inotify_arg_to_mask(arg);
 	int ret;
-	int add_rule = 0;
-	int save_spare_mask = 0;
-	__u32 spare_mask;
-	mask = inotify_arg_to_mask(arg);
-
 	fsn_mark = fsnotify_find_mark(&inode->i_fsnotify_marks, group);
 	if (!fsn_mark)
 		return -ENOENT;
 
 	i_mark = container_of(fsn_mark, struct inotify_inode_mark, fsn_mark);
 
-	spin_lock(&fsn_mark->lock);
-	old_mask = fsn_mark->mask;
-	
-	if(!implicit_rec_watch) { //explicit add request
-		if((fsnotify_is_rule_mark(fsn_mark) && !(mask & IN_RECURSIVE_ADD)) || // Re & N : Don't allow.
-			(fsnotify_is_normal_mark(fsn_mark) && (mask & IN_RECURSIVE_ADD))){  // N & Re : Don't allow.
-			ret = -EINVAL;
-			spin_unlock(&fsn_mark->lock);
-			goto end;
-		}
-		if(fsnotify_is_recursive_mark(fsn_mark)){ // If it Ri & (Re or N), always add the mask. 
-			add = 1;
-			save_spare_mask = 1;
-			spare_mask = mask;
-			if(mask & IN_RECURSIVE_ADD) //If it is Ri & Re, add the rule to the list
-				add_rule = 1; 
-		}
-	}
-	if((mask & IN_RECURSIVE_ADD) && (implicit_rec_watch)) { // implicit add request (Ri)
-		if(fsnotify_is_normal_mark(fsn_mark) || fsnotify_is_rule_mark(fsn_mark)) { // If the current mark is R or N : Save the mask in spare_mask.
-			add = 1;
-			save_spare_mask = 1;
-			spare_mask = old_mask;
-		}
-	}
-	if(!implicit_rec_watch && (mask & IN_RECURSIVE_ADD)) {
-		ret = fsnotify_update_recursive_mark(&inode->i_fsnotify_marks, fsn_mark, add_rule); //add/update rule 
-		if(!ret) {
-			spin_unlock(&fsn_mark->lock);
-			goto end;
-		}		
-	}
-	if(!fsn_mark->spare_mask)
-		fsn_mark->spare_mask = spare_mask;
-
-	if (add)
-		fsn_mark->mask |= mask;
-	else
-		fsn_mark->mask = mask;
-
-	new_mask = fsn_mark->mask;
-	spin_unlock(&fsn_mark->lock);
-
-	if (old_mask != new_mask) {
-		/* more bits in old than in new? */
-		int dropped = (old_mask & ~new_mask);
-		/* more bits in this fsn_mark than the inode's mask? */
-		int do_inode = (new_mask & ~inode->i_fsnotify_mask);
-
-		/* update the inode with this new fsn_mark */
-		if (dropped || do_inode)
-			fsnotify_recalc_mask(inode->i_fsnotify_marks);
-
-	}
+	fsnotify_update_existing_mark(fsn_mark, inode, mask, implicit_rec_watch, add); 
 
 	/* return the wd */
 	ret = i_mark->wd;
@@ -568,16 +508,16 @@ end:
 
 	return ret;
 }
-static int inotify_new_watch(struct fsnotify_group *group,
+int inotify_new_watch(struct fsnotify_group *group,
 			     struct inode *inode,
-			     u32 arg, int implicit_rec_watch)
+			     u32 arg, int wd)
 {
 	struct inotify_inode_mark *tmp_i_mark;
 	__u32 mask;
 	int ret;
 	struct idr *idr = &group->inotify_data.idr;
 	spinlock_t *idr_lock = &group->inotify_data.idr_lock;
-
+	int implicit_rec_watch = 0;
 	mask = inotify_arg_to_mask(arg);
 
 	tmp_i_mark = kmem_cache_alloc(inotify_inode_mark_cachep, GFP_KERNEL);
@@ -586,13 +526,22 @@ static int inotify_new_watch(struct fsnotify_group *group,
 
 	fsnotify_init_mark(&tmp_i_mark->fsn_mark, group);
 	tmp_i_mark->fsn_mark.mask = mask;
-	tmp_i_mark->wd = -1;
-	//tmp_i_mark->spare_mask = 0;
+	tmp_i_mark->wd = wd;
 
-	ret = inotify_add_to_idr(idr, idr_lock, tmp_i_mark);
-	if (ret)
-		goto out_err;
-
+	if(wd >= 0) {	
+		/* 
+		 * Implicit add watch. Use the one given wd and increment refcnt  
+		 * (to compensate for not calling inotify_add_to_idr() 
+		 */
+		fsnotify_get_mark(&tmp_i_mark->fsn_mark);
+		implicit_rec_watch = 1; 
+	} else { 
+		/* Explicit add watch. Allocate a new wd. */
+		tmp_i_mark->fsn_mark.spare_mask = mask;
+		ret = inotify_add_to_idr(idr, idr_lock, tmp_i_mark);
+		if (ret)
+			goto out_err;
+	}
 	/* increment the number of watches the user has */
 	if (!inc_inotify_watches(group->inotify_data.ucounts)) {
 		inotify_remove_from_idr(group, tmp_i_mark);
@@ -603,8 +552,13 @@ static int inotify_new_watch(struct fsnotify_group *group,
 	/* we are on the idr, now get on the inode */
 	ret = fsnotify_add_mark_locked(&tmp_i_mark->fsn_mark, inode, NULL, 0, implicit_rec_watch);
 	if (ret) {
-		/* we failed to get on the inode, get off the idr */
-		inotify_remove_from_idr(group, tmp_i_mark);
+		/* we failed to get on the inode */
+		if(implicit_watch)
+			/* To match for refcnt incremented when wd is assigned */
+			fsnotify_put_mark(&tmp_i_mark->fsn_mark);
+		else
+			/* get off the idr */
+			inotify_remove_from_idr(group, tmp_i_mark);
 		goto out_err;
 	}
 
@@ -627,7 +581,7 @@ static int inotify_update_watch(struct fsnotify_group *group, struct inode *inod
 	ret = inotify_update_existing_watch(group, inode, arg, 0);
 	/* no mark present, try to add a new one */
 	if (ret == -ENOENT) {
-		ret = inotify_new_watch(group, inode, arg, 0);
+		ret = inotify_new_watch(group, inode, arg, -1);
 	}
 	mutex_unlock(&group->mark_mutex);
 
