@@ -429,6 +429,7 @@ extern int fsnotify_update_recursive_mark(struct fsnotify_mark_connector __rcu *
 extern int fsnotify_update_recursive_mark_list(struct fsnotify_mark_connector __rcu **connp,
                                 struct fsnotify_mark *mark,
                                 int add);
+extern void fsnotify_recursive_rules_init(void);
 #else
 
 static inline int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,

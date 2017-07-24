@@ -111,8 +111,15 @@ struct pool_mask{
 	struct hlist_node hentry;
 };
 atomic_t g_rutime;
+static DEFINE_SPINLOCK(mask_pool_lock);
 #define FSNOTIFY_GROUP_MASK_BUCKETS 7
 DEFINE_HASHTABLE(pooled_group_masks, FSNOTIFY_GROUP_MASK_BUCKETS); //maximum of 128 groups allowed
+
+;
+void fsnotify_recursive_rules_init(void) 
+{
+	atomic_set(&g_rutime, 0);
+}
 
 void fsnotify_get_mark(struct fsnotify_mark *mark)
 {
@@ -244,7 +251,7 @@ void fsnotify_put_mark(struct fsnotify_mark *mark)
 		free_conn = true;
 	} else {
 		__fsnotify_recalc_mask(conn);
-		if(hlist_empty(conn->r_list))
+		if(hlist_empty(&conn->r_list))
 			conn->flags &= ~FSNOTIFY_OBJ_TYPE_REC_RULE;
 	}
 	mark->connector = NULL;
@@ -563,8 +570,12 @@ int fsnotify_update_recursive_mark_list(struct fsnotify_mark_connector __rcu **c
 struct pool_mask *fsnotify_find_hnode(struct fsnotify_group *group) 
 {
 	struct pool_mask *pmask_node;
-	hash_for_each_possible(pooled_group_masks, pmask_node, hentry, (unsigned long)group)
-	return pmask_node;
+	hash_for_each_possible(pooled_group_masks, pmask_node, hentry, (unsigned long)group) {
+		if(pmask_node->group != group)
+			continue;
+		return pmask_node; 
+	}
+	return NULL;
 }
 
 int fsnotify_add_hnode(struct pool_mask *hnode, struct fsnotify_group *group)
@@ -629,9 +640,9 @@ void fsnotify_update_existing_mark(struct pool_mask *hnode, struct fsnotify_grou
 int __fsnotify_update_marks_inode(struct inode *inode) 
 {
 	struct fsnotify_mark_connector *inode_conn;	
-	struct hlist_node *inode_node = NULL, *vfsmount_node = NULL, *rule_node = NULL;
-	struct fsnotify_mark *inode_mark = NULL, *vfsmount_mark = NULL;
-	struct fsnotify_group *inode_group, *vfsmount_group;
+	struct hlist_node *inode_node = NULL, /**vfsmount_node = NULL, */*rule_node = NULL;
+	struct fsnotify_mark *inode_mark = NULL/*, *vfsmount_mark = NULL*/;
+	struct fsnotify_group *inode_group/*, *vfsmount_group*/;
 	struct fsnotify_iter_info iter_info;
 	struct pool_mask *hash_node;
 	int bkt;
@@ -714,19 +725,29 @@ out:
 	return ret;
 }
 
-int  fsnotify_is_latest(struct inode *inode) 
+int  fsnotify_is_latest(struct inode *inode, vfsmount *mnt) 
 {
 	int ret = 0;
 	int idx;
 	struct fsnotify_mark_connector __rcu **connp;
 	struct fsnotify_mark_connector *conn;
-	if (inode)
-		connp = &inode->i_fsnotify_marks;
+//	if (inode)
+	if(!atomic_read(&g_rutime)) {
+		return ret;		
+	}
+	connp = &inode->i_fsnotify_marks;
 	/*else
 		connp = &real_mount(mnt)->mnt_fsnotify_marks; */
 	/* dereference this inode connector */
-	idx = srcu_read_lock(&fsnotify_mark_srcu);
-	conn = srcu_dereference(*connp, &fsnotify_mark_srcu);
+restart:	
+	conn = fsnotify_grab_connector(connp);
+	if (!conn) {
+		err = fsnotify_attach_connector_to_object(connp, inode, mnt);
+		if (err)
+			return err;
+		goto restart;
+	}
+	}
 	if (atomic_read(&conn->r_utime) == atomic_read(&g_rutime)) {
 		ret = 1;
 	}
@@ -734,17 +755,18 @@ int  fsnotify_is_latest(struct inode *inode)
 	return ret;
 }
 
-int fsnotify_update_marks_inodes(struct dentry *dentry, struct inode *inode)
+int fsnotify_update_marks_inodes(struct dentry *dentry, struct inode *inode, struct vfsmount *mnt)
 {
 	struct dentry *parent;
 	int ret = 0;
 	dget(dentry);
-	if(IS_ROOT(dentry) || fsnotify_is_latest(inode)) {
+	if(IS_ROOT(dentry) || fsnotify_is_latest(inode, mnt)) {
 		ret =  __fsnotify_update_marks_inode(inode);
 		goto out;
 	}
 	parent = dget_parent(dentry);
-	ret = fsnotify_update_marks_inodes(parent, d_inode(parent));
+	
+	ret = fsnotify_update_marks_inodes(parent, d_inode(parent), mnt);
 	if(!ret)
 		ret = __fsnotify_update_marks_inode(inode);
 out:	
@@ -771,63 +793,7 @@ struct dentry *fsnotify_get_dentry(struct inode* inode,
         //dget(alias);
 	return alias;
 }
-#if 0
-int fsnotify_calculate_recursive_masks(struct inode *inode, struct mount *mnt, struct dentry *dentry) 
-{
-	struct dentry *parent, *old_parent = NULL;
-	struct inode *p_inode;
-	struct fsnotify_mark_connector *conn;
-	int ret = -EINVAL;
-	int inode_rule_utime;
-	int global_rule_utime;
-	/*initialize hash table */
-	hash_init(pooled_group_masks);
 
-	
-#if 0
-	if(IS_ROOT(dentry)) { //If this is the root directory, no need to pool the masks
-		fsnotify_update_inode_rule_time(&inode->i_fsnotify_marks);
-		ret = 0;
-		goto out;
-	}
-	parent = dentry;
-	while(1) {
-
-		if(IS_ROOT(parent) || !(ret)) { //Once you reach root, stop climbing up:
-			ret = fsnotify_calculate_mask(inode);
-			srcu_read_unlock(&fsnotify_mark_srcu, idx);
-			break;
-		}
-		parent = dget_parent(parent);
-		dput(old_parent);
-		old_parent = parent;
-		inode = d_inode(parent);
-		idx = srcu_read_lock(&fsnotify_mark_srcu);
-		conn = srcu_dereference(inode->i_fsnotify_marks, &fsnotify_mark_srcu);
-		if(!conn) {
-			continue;
-		}
-		if(atomic_read(&conn->r_utime) == atomic_read(&g_rutime)) {	 
-			 /* calculate the recursive masks from the latest inode and break */ 
-			ret = 0;  
-			continue;
-		}
-		/* Push the inode address in a stack if its a rule */
-	}
-	dput(old_parent);
-	/* 
-	 * We should get the latest rule/ root's masks here
-	 * Pop the inodes of the rules and update masks for existing marks and create new ones on the way back
-	 * at the end we pop the nearest rule and update it's masks too.
-	 * return the latest mask
-	 */
-#endif 
-out:	
-	dput(dentry);
-	return ret;
-}
-
-#endif
 int fsnotify_apply_recursive_rules(struct inode *inode, struct mount *mnt, 
 				const unsigned char *file_name)
 {
@@ -843,11 +809,15 @@ int fsnotify_apply_recursive_rules(struct inode *inode, struct mount *mnt,
 	else {
 		i_dentry = d_find_alias(inode);
 	}
-	ret = fsnotify_update_marks_inodes(i_dentry, inode); //TODO: should add support for vfsmount
+	// TODO: use a more concurrent update mechanism for hash table 
+	spin_lock(&mask_pool_lock);
+	hash_init(pooled_group_masks);
+	ret = fsnotify_update_marks_inodes(i_dentry, inode, mnt); //TODO: should add support for vfsmount
+	fsnotify_free_pooled_masks();	
+	spin_unlock(&mask_pool_lock);
 	return ret;		
+
 }
-
-
 
 /*
  * Add mark into proper place in given list of marks. These marks may be used
@@ -857,7 +827,7 @@ int fsnotify_apply_recursive_rules(struct inode *inode, struct mount *mnt,
  */
 static int fsnotify_add_mark_list(struct fsnotify_mark *mark,
 				  struct inode *inode, struct vfsmount *mnt,
-				  int allow_dups, int implicit_rec_add)
+				  int allow_dups, int implicit_watch)
 {
 	struct fsnotify_mark *lmark, *last = NULL;
 	struct fsnotify_mark_connector *conn;
@@ -881,8 +851,12 @@ restart:
 			return err;
 		goto restart;
 	}
-	/* add mark to the rule list if user explicitly requests with the flag */
-	if(!implicit_rec_add && (mark->mask & FS_RECURSIVE_ADD)) {
+	/* add mark to the rule list if user explicitly requests with the flag but only if its a directory*/
+	if(!implicit_watch && (mark->mask & FS_RECURSIVE_ADD)) {
+		if(!S_ISDIR(inode->i_mode)) {
+			err = -EINVAL;
+			goto out_err;
+		}
 		__fsnotify_update_recursive_mark_list(conn, mark, 1);
 	}
 	/* is mark the first mark? */
@@ -926,7 +900,7 @@ out_err:
  * event types should be delivered to which group.
  */
 int fsnotify_add_mark_locked(struct fsnotify_mark *mark, struct inode *inode,
-			     struct vfsmount *mnt, int allow_dups, int implicit_rec_add)
+			     struct vfsmount *mnt, int allow_dups, int implicit_watch)
 {
 	struct fsnotify_group *group = mark->group;
 	int ret = 0;
@@ -948,7 +922,7 @@ int fsnotify_add_mark_locked(struct fsnotify_mark *mark, struct inode *inode,
 	atomic_inc(&group->num_marks);
 	fsnotify_get_mark(mark); /* for g_list */
 	spin_unlock(&mark->lock);
-	ret = fsnotify_add_mark_list(mark, inode, mnt, allow_dups, implicit_rec_add);
+	ret = fsnotify_add_mark_list(mark, inode, mnt, allow_dups, implicit_watch);
 	if (ret)
 		goto err;
 
@@ -975,7 +949,7 @@ int fsnotify_add_mark(struct fsnotify_mark *mark, struct inode *inode,
 	struct fsnotify_group *group = mark->group;
 
 	mutex_lock(&group->mark_mutex);
-	ret = fsnotify_add_mark_locked(mark, inode, mnt, allow_dups, 0); //Note: for now, adding it here. May need to change the caller too
+	ret = fsnotify_add_mark_locked(mark, inode, mnt, allow_dups, 0); 
 	mutex_unlock(&group->mark_mutex);
 	return ret;
 }

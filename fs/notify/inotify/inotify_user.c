@@ -484,14 +484,14 @@ void inotify_ignored_and_remove_idr(struct fsnotify_mark *fsn_mark,
 }
 
 int __inotify_update_existing_watch(struct fsnotify_mark *fsn_mark, struct inode *inode,
-					u32 mask, int add, int implicit_watch, int implicit_wd)
+				__u32 mask, int add, int implicit_watch, int implicit_wd)
 {
 	struct inotify_inode_mark *i_mark;
-	u32 old_mask, new_mask;
+	__u32 old_mask, new_mask;
 	int ret = -1;
 	int add_rule = 0;
 	int save_spare_mask = 0;
-	u32 spare_mask = 0;
+	__u32 spare_mask = 0;
 	
 	spin_lock(&fsn_mark->lock);
 	old_mask = fsn_mark->mask;
@@ -857,7 +857,7 @@ static int __init inotify_user_setup(void)
 	BUG_ON(hweight32(ALL_INOTIFY_BITS) != 21);
 
 	inotify_inode_mark_cachep = KMEM_CACHE(inotify_inode_mark, SLAB_PANIC);
-
+	fsnotify_recursive_rules_init();
 	inotify_max_queued_events = 16384;
 	init_user_ns.ucount_max[UCOUNT_INOTIFY_INSTANCES] = 128;
 	init_user_ns.ucount_max[UCOUNT_INOTIFY_WATCHES] = 8192;
