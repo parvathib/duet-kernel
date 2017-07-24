@@ -280,7 +280,7 @@ static void untag_chunk(struct node *p)
 		spin_unlock(&hash_lock);
 		spin_unlock(&entry->lock);
 		mutex_unlock(&entry->group->mark_mutex);
-		fsnotify_destroy_mark(entry, audit_tree_group);
+		fsnotify_destroy_mark(entry, audit_tree_group, 0);
 		goto out;
 	}
 
@@ -323,7 +323,7 @@ static void untag_chunk(struct node *p)
 	spin_unlock(&hash_lock);
 	spin_unlock(&entry->lock);
 	mutex_unlock(&entry->group->mark_mutex);
-	fsnotify_destroy_mark(entry, audit_tree_group);
+	fsnotify_destroy_mark(entry, audit_tree_group, 0);
 	fsnotify_put_mark(&new->mark);	/* drop initial reference */
 	goto out;
 
@@ -364,7 +364,7 @@ static int create_chunk(struct inode *inode, struct audit_tree *tree)
 		spin_unlock(&hash_lock);
 		chunk->dead = 1;
 		spin_unlock(&entry->lock);
-		fsnotify_destroy_mark(entry, audit_tree_group);
+		fsnotify_destroy_mark(entry, audit_tree_group, 0);
 		fsnotify_put_mark(entry);
 		return 0;
 	}
@@ -454,7 +454,7 @@ static int tag_chunk(struct inode *inode, struct audit_tree *tree)
 		spin_unlock(&old_entry->lock);
 		mutex_unlock(&old_entry->group->mark_mutex);
 
-		fsnotify_destroy_mark(chunk_entry, audit_tree_group);
+		fsnotify_destroy_mark(chunk_entry, audit_tree_group, 0);
 
 		fsnotify_put_mark(chunk_entry);
 		fsnotify_put_mark(old_entry);
@@ -486,7 +486,7 @@ static int tag_chunk(struct inode *inode, struct audit_tree *tree)
 	spin_unlock(&chunk_entry->lock);
 	spin_unlock(&old_entry->lock);
 	mutex_unlock(&old_entry->group->mark_mutex);
-	fsnotify_destroy_mark(old_entry, audit_tree_group);
+	fsnotify_destroy_mark(old_entry, audit_tree_group, 0);
 	fsnotify_put_mark(chunk_entry);	/* drop initial reference */
 	fsnotify_put_mark(old_entry); /* pair to fsnotify_find mark_entry */
 	return 0;

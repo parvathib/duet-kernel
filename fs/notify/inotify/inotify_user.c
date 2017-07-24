@@ -419,7 +419,7 @@ static void inotify_remove_from_idr(struct fsnotify_group *group,
 			__func__, i_mark, i_mark->wd, i_mark->fsn_mark.group);
 		goto out;
 	}
-
+	
 	/* Lets look in the idr to see if we find it */
 	found_i_mark = inotify_idr_find_locked(group, wd);
 	if (unlikely(!found_i_mark)) {
@@ -483,31 +483,113 @@ void inotify_ignored_and_remove_idr(struct fsnotify_mark *fsn_mark,
 	dec_inotify_watches(group->inotify_data.ucounts);
 }
 
+int __inotify_update_existing_watch(struct fsnotify_mark *fsn_mark, struct inode *inode,
+					u32 mask, int add, int implicit_watch, int implicit_wd)
+{
+	struct inotify_inode_mark *i_mark;
+	u32 old_mask, new_mask;
+	int ret = -1;
+	int add_rule = 0;
+	int save_spare_mask = 0;
+	u32 spare_mask = 0;
+	
+	spin_lock(&fsn_mark->lock);
+	old_mask = fsn_mark->mask;
+	
+	if(!implicit_watch) { //explicit add request
+		if((fsnotify_is_rule_mark(fsn_mark) && !(mask & IN_RECURSIVE_ADD)) || // Re & N : Don't allow.
+			(fsnotify_is_normal_mark(fsn_mark) && (mask & IN_RECURSIVE_ADD))){  // N & Re : Don't allow.
+			spin_unlock(&fsn_mark->lock);
+			goto end;
+		}
+		if(fsnotify_is_recursive_mark(fsn_mark)){ // If it Ri & (Re or N), always add the mask. The mark becomes of type N or Re 
+			add = 1; 
+			save_spare_mask = 1;
+			spare_mask = mask;
+			if(mask & IN_RECURSIVE_ADD) //If it is Ri & Re, add the rule to the list
+				add_rule = 1;
+			else //if Ri & N, make it a normal node. 
+				fsn_mark->mask &= ~(IN_RECURSIVE_ADD);
+		}
+		if((fsnotify_is_rule_mark(fsn_mark) || fsnotify_is_normal_mark(fsn_mark)) && (fsn_mark->spare_mask)) {//update the spare mask 
+			spare_mask = mask;
+			save_spare_mask = 1;
+		}
+	}
+	if((mask & IN_RECURSIVE_ADD) && (implicit_watch)) { // implicit add request (Ri)
+		if(fsnotify_is_normal_mark(fsn_mark) || fsnotify_is_rule_mark(fsn_mark)) { // If the current mark is R or N : Save the mask in spare_mask.
+			if(!fsn_mark->spare_mask) {
+				save_spare_mask = 1;
+				spare_mask = old_mask;
+			}
+			mask &= ~(IN_RECURSIVE_ADD);
+		}
+	}
+	if(!implicit_watch && (mask & IN_RECURSIVE_ADD)) {
+		if(!fsnotify_update_recursive_mark_list(&inode->i_fsnotify_marks, fsn_mark, add_rule)){ //add/update rule 
+			spin_unlock(&fsn_mark->lock);
+			goto end;
+		}		
+	}
+
+	if (add) {
+		fsn_mark->mask |= mask;
+		if(save_spare_mask) {
+			fsn_mark->spare_mask |= spare_mask;
+		}
+	}
+	else
+		fsn_mark->mask = mask;
+		if(save_spare_mask) {
+			fsn_mark->spare_mask = spare_mask;
+		}
+
+	new_mask = fsn_mark->mask;
+	spin_unlock(&fsn_mark->lock);
+
+	i_mark = container_of(fsn_mark, struct inotify_inode_mark, fsn_mark);
+	if(implicit_wd >= 0)
+		i_mark->wd = implicit_wd;
+
+	if (old_mask != new_mask) {
+		/* more bits in old than in new? */
+		int dropped = (old_mask & ~new_mask);
+		/* more bits in this mark than the inode's mask? */
+		int do_inode = (new_mask & ~inode->i_fsnotify_mask);
+
+		/* update the inode with this new mark */
+		if (dropped || do_inode)
+			fsnotify_recalc_mask(inode->i_fsnotify_marks);
+
+	}
+	/* return the wd */
+	ret = i_mark->wd;
+end:
+	return ret;
+}
+	
+
 static int inotify_update_existing_watch(struct fsnotify_group *group,
 					 struct inode *inode,
-					 u32 arg, int implicit_rec_watch)
+					 u32 arg)
 {
 	struct fsnotify_mark *fsn_mark;
-	struct inotify_inode_mark *i_mark;
 	int add = !!(arg & IN_MASK_ADD);
 	__u32 mask = inotify_arg_to_mask(arg);
 	int ret;
 	fsn_mark = fsnotify_find_mark(&inode->i_fsnotify_marks, group);
-	if (!fsn_mark)
-		return -ENOENT;
-
-	i_mark = container_of(fsn_mark, struct inotify_inode_mark, fsn_mark);
-
-	fsnotify_update_existing_mark(fsn_mark, inode, mask, implicit_rec_watch, add); 
-
-	/* return the wd */
-	ret = i_mark->wd;
+	if (!fsn_mark) {
+		ret = -ENOENT;
+		goto end;
+	}
+	ret = __inotify_update_existing_watch(fsn_mark, inode, mask, add, 0, -1); 
 end:
 	/* match the get from fsnotify_find_mark() */
 	fsnotify_put_mark(fsn_mark);
 
 	return ret;
 }
+
 int inotify_new_watch(struct fsnotify_group *group,
 			     struct inode *inode,
 			     u32 arg, int wd)
@@ -517,7 +599,7 @@ int inotify_new_watch(struct fsnotify_group *group,
 	int ret;
 	struct idr *idr = &group->inotify_data.idr;
 	spinlock_t *idr_lock = &group->inotify_data.idr_lock;
-	int implicit_rec_watch = 0;
+	int implicit_watch = 0;
 	mask = inotify_arg_to_mask(arg);
 
 	tmp_i_mark = kmem_cache_alloc(inotify_inode_mark_cachep, GFP_KERNEL);
@@ -534,7 +616,7 @@ int inotify_new_watch(struct fsnotify_group *group,
 		 * (to compensate for not calling inotify_add_to_idr() 
 		 */
 		fsnotify_get_mark(&tmp_i_mark->fsn_mark);
-		implicit_rec_watch = 1; 
+		implicit_watch = 1; 
 	} else { 
 		/* Explicit add watch. Allocate a new wd. */
 		ret = inotify_add_to_idr(idr, idr_lock, tmp_i_mark);
@@ -542,14 +624,14 @@ int inotify_new_watch(struct fsnotify_group *group,
 			goto out_err;
 	}
 	/* increment the number of watches the user has */
-	if (!inc_inotify_watches(group->inotify_data.ucounts)) {
+	if (!inc_inotify_watches(group->inotify_data.ucounts)) { //TODO: check for the number of watches
 		inotify_remove_from_idr(group, tmp_i_mark);
 		ret = -ENOSPC;
 		goto out_err;
 	}
 
 	/* we are on the idr, now get on the inode */
-	ret = fsnotify_add_mark_locked(&tmp_i_mark->fsn_mark, inode, NULL, 0, implicit_rec_watch);
+	ret = fsnotify_add_mark_locked(&tmp_i_mark->fsn_mark, inode, NULL, 0, implicit_watch);
 	if (ret) {
 		/* we failed to get on the inode */
 		if(implicit_watch)
@@ -577,7 +659,7 @@ static int inotify_update_watch(struct fsnotify_group *group, struct inode *inod
 
 	mutex_lock(&group->mark_mutex);
 	/* try to update and existing watch with the new arg */
-	ret = inotify_update_existing_watch(group, inode, arg, 0);
+	ret = inotify_update_existing_watch(group, inode, arg);
 	/* no mark present, try to add a new one */
 	if (ret == -ENOENT) {
 		ret = inotify_new_watch(group, inode, arg, -1);
@@ -736,15 +818,7 @@ SYSCALL_DEFINE2(inotify_rm_watch, int, fd, __s32, wd)
 		goto out;
 
 	ret = 0;
-#ifdef CONFIG_FSNOTIFY_RECURSIVE 
-	if(i_mark->fsn_mark.flags & FSNOTIFY_MARK_FLAG_RULE) {
-		ret = fsnotify_destroy_recursive_mark(&i_mark->fsn_mark, group);
-		if(!ret){
-			goto out;
-		}
-	}
-#endif
-	fsnotify_destroy_mark(&i_mark->fsn_mark, group);
+	fsnotify_destroy_mark(&i_mark->fsn_mark, group, 0);
 
 	/* match ref taken by inotify_idr_find */
 	fsnotify_put_mark(&i_mark->fsn_mark);

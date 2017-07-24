@@ -240,23 +240,6 @@ static int send_to_group(struct inode *to_tell,
 					file_name, cookie, iter_info);
 }
 
-struct dentry *fsnotify_get_dentry(struct inode* inode, 
-				const unsigned char *file_name, 
-				unsigned char *path_name)
-{
-	if(hlist_empty(&inode->i_dentry)) {
-		return NULL;	
-	}
-	hlist_for_each_entry(alias, &inode->i_dentry, d_u.d_alias) {
-		if (IS_ROOT(alias) && (alias->d_flags & DCACHE_DISCONNECTED))
-			continue;
-		if(!strcmp(alias->d_name.name, file_name)){
-			break;
-		}
-	}
-	return alias;
-}
-
 /*
  * This is the main call to fsnotify.  The VFS calls into hook specific functions
  * in linux/fsnotify.h.  Those functions then in turn call here.  Here will call
@@ -309,8 +292,6 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 		inode_conn = srcu_dereference(to_tell->i_fsnotify_marks,
 					      &fsnotify_mark_srcu);
 		if (inode_conn) {
-			inode_rule_time = scru_dereference(inode_conn->r_utime, &fsnotify_mark_srcu);
-			fsnotify_apply_recursive_rules(to_tell, mnt, file_name);
 			inode_node = srcu_dereference(inode_conn->list.first,
 						      &fsnotify_mark_srcu);
 		}

@@ -24,7 +24,13 @@ static inline struct inotify_event_info *INOTIFY_E(struct fsnotify_event *fse)
 extern int inotify_new_watch(struct fsnotify_group *group,
                              struct inode *inode,
                              u32 arg, int wd);
-extern int inotify_get_pvt_data(struct fsnotify_mark *mark);
+extern int __inotify_update_existing_watch(struct fsnotify_mark *fsn_mark, 
+						struct inode *inode,
+                                        	u32 mask, int add, 
+						int implicit_watch, 
+						int implicit_wd);
+
+extern int inotify_get_mark_priv_data(struct fsnotify_mark *mark);
 
 extern void inotify_ignored_and_remove_idr(struct fsnotify_mark *fsn_mark,
 					   struct fsnotify_group *group);

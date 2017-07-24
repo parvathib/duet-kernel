@@ -115,6 +115,13 @@ struct fsnotify_ops {
 	void (*free_event)(struct fsnotify_event *event);
 	/* called on final put+free to free memory */
 	void (*free_mark)(struct fsnotify_mark *mark);
+	int (*get_mark_priv_data)(struct fsnotify_mark *mark);
+	int (*add_new_mark)(struct fsnotify_group *group,struct inode *inode, u32 arg, int wd);
+        int (*update_mark)(struct fsnotify_mark *fsn_mark, 
+			struct inode *inode,
+                        u32 mask, int add, 
+			int implicit_watch, 
+			int implicit_wd);
 };
 
 /*
@@ -255,6 +262,7 @@ struct fsnotify_mark_connector {
 struct fsnotify_mark {
 	/* Mask this mark is for [mark->lock, group->mark_mutex] */
 	__u32 mask;
+	__u32 spare_mask;
 	/* We hold one for presence in g_list. Also one ref for each 'thing'
 	 * in kernel that found and may be using this mark. */
 	atomic_t refcnt;
@@ -293,6 +301,7 @@ extern int __fsnotify_parent(const struct path *path, struct dentry *dentry, __u
 extern void __fsnotify_inode_delete(struct inode *inode);
 extern void __fsnotify_vfsmount_delete(struct vfsmount *mnt);
 extern u32 fsnotify_get_cookie(void);
+
 
 static inline bool fsnotify_is_recursive_mark(struct fsnotify_mark *mark)
 {
@@ -385,7 +394,8 @@ int fsnotify_add_mark_locked(struct fsnotify_mark *mark, struct inode *inode,
                              struct vfsmount *mnt, int allow_dups, int implicit_rec_add);
 /* given a group and a mark, flag mark to be freed when all references are dropped */
 extern void fsnotify_destroy_mark(struct fsnotify_mark *mark,
-				  struct fsnotify_group *group);
+				  struct fsnotify_group *group,
+				  int implicit_watch);
 /* detach mark from inode / mount list, group list, drop inode reference */
 extern void fsnotify_detach_mark(struct fsnotify_mark *mark);
 /* free mark */
@@ -416,7 +426,9 @@ extern void fsnotify_init_event(struct fsnotify_event *event,
 extern int fsnotify_update_recursive_mark(struct fsnotify_mark_connector __rcu **connp,
 				struct fsnotify_mark *mark,
 				int add);
-
+extern int fsnotify_update_recursive_mark_list(struct fsnotify_mark_connector __rcu **connp,
+                                struct fsnotify_mark *mark,
+                                int add);
 #else
 
 static inline int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,

@@ -236,16 +236,11 @@ void fsnotify_put_mark(struct fsnotify_mark *mark)
 
 	conn = mark->connector;
 	hlist_del_init_rcu(&mark->obj_list);
-	if(fsnotify_is_rule_mark(mark)) {
-		hlist_del_init_rcu(&mark->rule_list);
-	}
 	if (hlist_empty(&conn->list)) {
 		inode = fsnotify_detach_connector_from_object(conn);
 		free_conn = true;
 	} else {
 		__fsnotify_recalc_mask(conn);
-		if(hlist_empty(conn->r_list))
-			conn->flags &= ~FSNOTIFY_OBJ_TYPE_REC_RULE;
 	}
 	mark->connector = NULL;
 	spin_unlock(&conn->lock);
@@ -404,27 +399,9 @@ void fsnotify_free_mark(struct fsnotify_mark *mark)
 }
 
 void fsnotify_destroy_mark(struct fsnotify_mark *mark,
-			   struct fsnotify_group *group,
-			   int implicit_watch)
+			   struct fsnotify_group *group)
 {
-	struct fsnotify_mark_connector *conn = mark->connector;
-	if(!conn) {
-		return; 
-	}
 	mutex_lock_nested(&group->mark_mutex, SINGLE_DEPTH_NESTING);
-	if(implicit_watch) {
-		spin_lock(&mark->lock);
-		if(!mark->spare_mask) {
-			goto out;
-		}
-		mark->mask = mark->spare_mask;
-		mark->spare_mask = 0;
-		__fsnotify_recalc_mask(conn);
-		spin_unlock(&mark->lock);
-		mutex_unlock(&group->mark_mutex);
-		return;
-	}
-out:
 	fsnotify_detach_mark(mark);
 	mutex_unlock(&group->mark_mutex);
 	fsnotify_free_mark(mark);
@@ -560,6 +537,38 @@ int fsnotify_update_recursive_mark_list(struct fsnotify_mark_connector __rcu **c
 	return 0;
 }
 
+int fsnotify_destroy_recursive_mark(struct fsnotify_mark *mark,
+				    struct fsnotify_group *group)
+{
+	struct fsnotify_mark_connector *conn;
+	int ret = 0;
+	conn = mark->connector;
+	if(!conn) {
+		return -EINVAL;
+	}
+	mutex_lock_nested(&group->mark_mutex, SINGLE_DEPTH_NESTING);
+	spin_lock(&mark->lock);
+	if(!mark->spare_mask) {
+		ret = -ENOENT;
+		goto out;
+	}
+		mark->mask = mark->spare_mask;
+		mark->spare_mask = 0;
+		__fsnotify_recalc_mask(conn);
+		if(mark->flags & FSNOTIFY_MARK_FLAG_RULE)
+			mark->flags &= ~(FSNOTIFY_MARK_FLAG_RULE);
+		if(hlist_empty(&conn->r_list)) {
+			spin_lock(&conn->lock);
+			conn->flags &= ~(FSNOTIFY_OBJ_TYPE_REC_RULE);
+			spin_unlock(&conn->lock);
+		}	
+	}
+out:
+	spin_unlock(&mark->lock);
+	mutex_unlock(&group->mark_mutex);
+	return ret;
+}
+
 struct pool_mask *fsnotify_find_hnode(struct fsnotify_group *group) 
 {
 	struct pool_mask *pmask_node;
@@ -575,9 +584,6 @@ int fsnotify_add_hnode(struct pool_mask *hnode, struct fsnotify_group *group)
 		return -ENOMEM; 	
 	}
 	hnode->group = group;
-	hnode->updated = 0;
-	hnode->mask = 0;
-	hnode->mark_id = 0;
 	hash_add(pooled_group_masks, &hnode->hentry, (unsigned long)group);
 	return 0;	
 }
@@ -606,21 +612,21 @@ void fsnotify_update_inode_rule_time(struct fsnotify_mark_connector *conn) {
 	int global_rutime;
 	int mark_rutime;
 	do {
-		global_rutime = atomic_read(&g_rutime);
+		global_rutime = atomic_read(g_rutime);
 		//struct fsnotify_mark_connector *conn = fsnotify_grab_connector(connp);
-		mark_rutime = atomic_cmpxchg(&conn->r_utime, global_rutime, atomic_read(&g_rutime));
+		mark_rutime = atomic_cmpxcg(&conn->r_utime, global_rutime, atomic_read(g_rutime));
 		//spin_unlock(&conn->lock);
 	}while(global_rutime != mark_rutime);
 	return;	
 }
 
-void fsnotify_update_existing_mark(struct pool_mask *hnode, struct fsnotify_group *group, 
+void fsnotify_update_existing_mark(struct pool_mask *hnode, struct fsnotify_group *group 
 				struct inode *inode, struct fsnotify_mark *mark)
 {
 	u32 orig_mask = mark->spare_mask;
 	u32 new_mask = hnode->mask | orig_mask;
 	hnode->mark_id = group->ops->get_mark_priv_data(mark);
-	group->ops->update_mark(mark, inode, new_mask, 0, 1, hnode->mark_id);	
+	group->ops->update_mark(mark, inode, new_mask, 0, 1, node->mark_id);	
 	hnode->mask = mark->mask;
 	hnode->updated = 1;
 	return;
@@ -689,8 +695,8 @@ int __fsnotify_update_marks_inode(struct inode *inode)
 			hash_node = fsnotify_find_hnode(inode_group);
 			if((hash_node) && !hash_node->updated)
 				fsnotify_update_existing_mark(hash_node, inode_group, inode, inode_mark); 
-			if(!hash_node && fsnotify_is_normal_mark(inode_mark))
-				fsnotify_destroy_mark(inode_mark, inode_group, 1);
+			if(!hash_node && fsnotify_is_normal(inode_mark))
+				fsnotify_destroy_mark(inode_mark, inode_group);
 		}
 		if (inode_group)
 			inode_node = srcu_dereference(inode_node->next,
@@ -701,13 +707,12 @@ int __fsnotify_update_marks_inode(struct inode *inode)
 	hash_for_each(pooled_group_masks, bkt, hash_node, hentry) {
 		if(hash_node) {
 			if(!hash_node->updated)
-				inode_group = hash_node->group;
 				inode_group->ops->add_new_mark(inode_group, inode, 
 						hash_node->mask, hash_node->mark_id);	
 			hash_node->updated = 0;	
 		}
 	} 
-	fsnotify_update_inode_rule_time(inode_conn);
+	fsnotify_update_inode_rule_time(conn);
 		
 out:
 	srcu_read_unlock(&fsnotify_mark_srcu, iter_info.srcu_idx);
@@ -718,12 +723,10 @@ int  fsnotify_is_latest(struct inode *inode)
 {
 	int ret = 0;
 	int idx;
-	struct fsnotify_mark_connector __rcu **connp;
-	struct fsnotify_mark_connector *conn;
 	if (inode)
 		connp = &inode->i_fsnotify_marks;
-	/*else
-		connp = &real_mount(mnt)->mnt_fsnotify_marks; */
+	else
+		connp = &real_mount(mnt)->mnt_fsnotify_marks;
 	/* dereference this inode connector */
 	idx = srcu_read_lock(&fsnotify_mark_srcu);
 	conn = srcu_dereference(*connp, &fsnotify_mark_srcu);
@@ -737,7 +740,6 @@ int  fsnotify_is_latest(struct inode *inode)
 int fsnotify_update_marks_inodes(struct dentry *dentry, struct inode *inode)
 {
 	struct dentry *parent;
-	int ret = 0;
 	dget(dentry);
 	if(IS_ROOT(dentry) || fsnotify_is_latest(inode)) {
 		ret =  __fsnotify_update_marks_inode(inode);
@@ -755,7 +757,6 @@ out:
 struct dentry *fsnotify_get_dentry(struct inode* inode,
                                 const unsigned char *file_name)
 {      
-	struct dentry *alias;	
 	spin_lock(&inode->i_lock); 
         if(hlist_empty(&inode->i_dentry)) {
                 return NULL;
@@ -832,6 +833,8 @@ int fsnotify_apply_recursive_rules(struct inode *inode, struct mount *mnt,
 				const unsigned char *file_name)
 {
 	int ret = 0;
+	struct fsnotify_mark_connector __rcu **connp;
+	struct fsnotify_mark_connector *conn;
 	struct dentry *i_dentry = NULL;
 	/* If the global and inode rule update time stamps match, return */
 	if(fsnotify_is_latest(inode)) {
@@ -1075,7 +1078,7 @@ void fsnotify_destroy_marks(struct fsnotify_mark_connector __rcu **connp)
 		if (old_mark)
 			fsnotify_put_mark(old_mark);
 		old_mark = mark;
-		fsnotify_destroy_mark(mark, mark->group, 0);
+		fsnotify_destroy_mark(mark, mark->group);
 		spin_lock(&conn->lock);
 	}
 	/*

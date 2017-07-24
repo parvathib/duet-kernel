@@ -142,7 +142,7 @@ static void audit_mark_log_rule_change(struct audit_fsnotify_mark *audit_mark, c
 
 void audit_remove_mark(struct audit_fsnotify_mark *audit_mark)
 {
-	fsnotify_destroy_mark(&audit_mark->mark, audit_fsnotify_group);
+	fsnotify_destroy_mark(&audit_mark->mark, audit_fsnotify_group, 0);
 	fsnotify_put_mark(&audit_mark->mark);
 }
 

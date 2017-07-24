@@ -34,7 +34,6 @@
 
 #include "inotify.h"
 
-extern int inotify_get_pvt_data(struct fsnotify_mark *mark);
 /*
  * Check if 2 events contain the same information.
  */
@@ -64,10 +63,10 @@ static int inotify_merge(struct list_head *list,
 	return event_compare(last_event, event);
 }
 /* fsnotify has no idea what is the wd of the mark. we use this handler to get the wd */
-int inotify_get_pvt_data(struct fsnotify_mark *mark) 
+int inotify_get_mark_priv_data(struct fsnotify_mark *mark) 
 {
 	struct inotify_inode_mark *i_mark;
-	i_mark = container_of(fsn_mark, struct inotify_inode_mark, fsn_mark);
+	i_mark = container_of(mark, struct inotify_inode_mark, fsn_mark);
 	return i_mark->wd;
 }
 
@@ -125,17 +124,7 @@ int inotify_handle_event(struct fsnotify_group *group,
 	}
 
 	if (inode_mark->mask & IN_ONESHOT) {
-#ifdef CONFIG_FSNOTIFY_RECURSIVE
-		/* 
-		 * if this is a rule and there is a non-recursive watch added earlier
-		 * make this a non-recursive mark 
-		 */
-		if((i_mark->spare_mask) && (inode_mark.flags & FSNOTIFY_MARK_FLAG_RULE)) {
-			ret = fsnotify_destroy_recursive_mark(&i_mark->fsn_mark, group, i_mark->spare_mask);
-                	return ret;	
-		}
-#endif
-		fsnotify_destroy_mark(inode_mark, group);
+		fsnotify_destroy_mark(inode_mark, group, 0);
 	}
 	return 0;
 }
@@ -210,6 +199,7 @@ const struct fsnotify_ops inotify_fsnotify_ops = {
 	.free_event = inotify_free_event,
 	.freeing_mark = inotify_freeing_mark,
 	.free_mark = inotify_free_mark,
-	.get_pvt_info = inotify_get_pvt_info,
+	.get_mark_priv_data = inotify_get_mark_priv_data,
 	.add_new_mark = inotify_new_watch,
+	.update_mark  = __inotify_update_existing_watch,
 };

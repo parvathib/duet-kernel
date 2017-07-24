@@ -14,6 +14,10 @@ struct fsnotify_iter_info {
 	struct fsnotify_mark *vfsmount_mark;
 	int srcu_idx;
 };
+/* update a recursive rule on a inode or vfsmount */
+int fsnotify_apply_recursive_rules(struct inode *inode, struct mount *mnt, 
+                                const unsigned char *file_name);
+
 /* destroy all events sitting in this groups notification queue */
 extern void fsnotify_flush_notify(struct fsnotify_group *group);
 
