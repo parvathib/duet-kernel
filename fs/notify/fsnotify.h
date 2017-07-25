@@ -15,7 +15,7 @@ struct fsnotify_iter_info {
 	int srcu_idx;
 };
 /* update a recursive rule on a inode or vfsmount */
-int fsnotify_apply_recursive_rules(struct inode *inode, struct mount *mnt, 
+int fsnotify_apply_recursive_rules(struct inode *inode, struct vfsmount *mnt, 
                                 const unsigned char *file_name);
 
 /* destroy all events sitting in this groups notification queue */

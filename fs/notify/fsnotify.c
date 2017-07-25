@@ -256,15 +256,19 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	struct fsnotify_iter_info iter_info;
 	struct mount *mnt;
 	int ret = 0;
+	struct vfsmount *vfsmnt = NULL;
 	
 	/* global tests shouldn't care about events on child only the specific event */
 	__u32 test_mask = (mask & ~FS_EVENT_ON_CHILD);
 
-	if (data_is == FSNOTIFY_EVENT_PATH)
+	if (data_is == FSNOTIFY_EVENT_PATH) {
 		mnt = real_mount(((const struct path *)data)->mnt);
+		vfsmnt = ((const struct path *)data)->mnt;
+	}
 	else
 		mnt = NULL;
-	fsnotify_apply_recursive_rules(to_tell, mnt, file_name);
+	if(mask & RECURSIVE_ADD_FSNOTIFY_EVENTS)
+		fsnotify_apply_recursive_rules(to_tell, vfsmnt, file_name);
 	/*
 	 * Optimization: srcu_read_lock() has a memory barrier which can
 	 * be expensive.  It protects walking the *_fsnotify_marks lists.

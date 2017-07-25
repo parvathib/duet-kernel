@@ -639,10 +639,10 @@ void fsnotify_update_existing_mark(struct pool_mask *hnode, struct fsnotify_grou
 
 int __fsnotify_update_marks_inode(struct inode *inode) 
 {
-	struct fsnotify_mark_connector *inode_conn;	
+	struct fsnotify_mark_connector *inode_conn = NULL;	
 	struct hlist_node *inode_node = NULL, /**vfsmount_node = NULL, */*rule_node = NULL;
 	struct fsnotify_mark *inode_mark = NULL/*, *vfsmount_mark = NULL*/;
-	struct fsnotify_group *inode_group/*, *vfsmount_group*/;
+	struct fsnotify_group *inode_group = NULL/*, *vfsmount_group*/;
 	struct fsnotify_iter_info iter_info;
 	struct pool_mask *hash_node;
 	int bkt;
@@ -725,28 +725,30 @@ out:
 	return ret;
 }
 
-int  fsnotify_is_latest(struct inode *inode, vfsmount *mnt) 
+int  fsnotify_is_latest(struct inode *inode, struct vfsmount *mnt) 
 {
 	int ret = 0;
 	int idx;
+	int err = 0;
 	struct fsnotify_mark_connector __rcu **connp;
 	struct fsnotify_mark_connector *conn;
-//	if (inode)
 	if(!atomic_read(&g_rutime)) {
-		return ret;		
+		return 1;		
 	}
+//	if (inode)
 	connp = &inode->i_fsnotify_marks;
 	/*else
 		connp = &real_mount(mnt)->mnt_fsnotify_marks; */
 	/* dereference this inode connector */
 restart:	
-	conn = fsnotify_grab_connector(connp);
+	idx = srcu_read_lock(&fsnotify_mark_srcu);
+	conn = srcu_dereference(*connp, &fsnotify_mark_srcu);
 	if (!conn) {
+		srcu_read_unlock(&fsnotify_mark_srcu, idx);
 		err = fsnotify_attach_connector_to_object(connp, inode, mnt);
 		if (err)
-			return err;
+			return ret;
 		goto restart;
-	}
 	}
 	if (atomic_read(&conn->r_utime) == atomic_read(&g_rutime)) {
 		ret = 1;
@@ -794,13 +796,13 @@ struct dentry *fsnotify_get_dentry(struct inode* inode,
 	return alias;
 }
 
-int fsnotify_apply_recursive_rules(struct inode *inode, struct mount *mnt, 
+int fsnotify_apply_recursive_rules(struct inode *inode, struct vfsmount *mnt, 
 				const unsigned char *file_name)
 {
 	int ret = 0;
 	struct dentry *i_dentry = NULL;
 	/* If the global and inode rule update time stamps match, return */
-	if(fsnotify_is_latest(inode)) {
+	if(fsnotify_is_latest(inode, mnt)) {
 		return ret;	
 	}
 	if(!file_name) {
