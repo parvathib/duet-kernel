@@ -1,0 +1,3 @@
+kernel/./sys_ni.c:cond_syscall(sys_inotify_add_watch);
+Binary file kernel/./built-in.o matches
+Binary file kernel/./sys_ni.o matches

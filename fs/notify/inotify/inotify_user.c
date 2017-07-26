@@ -601,7 +601,7 @@ int inotify_new_watch(struct fsnotify_group *group,
 	spinlock_t *idr_lock = &group->inotify_data.idr_lock;
 	int implicit_watch = 0;
 	mask = inotify_arg_to_mask(arg);
-
+	printk("__TEST__ add new watch wd: %d\n", wd);
 	tmp_i_mark = kmem_cache_alloc(inotify_inode_mark_cachep, GFP_KERNEL);
 	if (unlikely(!tmp_i_mark))
 		return -ENOMEM;
@@ -610,7 +610,7 @@ int inotify_new_watch(struct fsnotify_group *group,
 	tmp_i_mark->fsn_mark.mask = mask;
 	tmp_i_mark->wd = wd;
 
-	if(wd >= 0) {	
+	if(wd != -1) {	
 		/* 
 		 * Implicit add watch. Use the one given wd and increment refcnt  
 		 * (to compensate for not calling inotify_add_to_idr() 
@@ -656,7 +656,6 @@ out_err:
 static int inotify_update_watch(struct fsnotify_group *group, struct inode *inode, u32 arg)
 {
 	int ret = 0;
-
 	mutex_lock(&group->mark_mutex);
 	/* try to update and existing watch with the new arg */
 	ret = inotify_update_existing_watch(group, inode, arg);

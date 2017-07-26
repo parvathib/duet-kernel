@@ -226,7 +226,7 @@ void fsnotify_put_mark(struct fsnotify_mark *mark)
 	struct fsnotify_mark_connector *conn;
 	struct inode *inode = NULL;
 	bool free_conn = false;
-
+	dump_stack();
 	/* Catch marks that were actually never attached to object */
 	if (!mark->connector) {
 		if (atomic_dec_and_test(&mark->refcnt))
@@ -418,6 +418,7 @@ void fsnotify_destroy_mark(struct fsnotify_mark *mark,
 	if(!conn) {
 		return; 
 	}
+	dump_stack();
 	mutex_lock_nested(&group->mark_mutex, SINGLE_DEPTH_NESTING);
 	if(implicit_watch) {
 		spin_lock(&mark->lock);
