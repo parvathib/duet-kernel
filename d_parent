@@ -1,0 +1,1881 @@
+fs/./9p/fid.c:	hlist_add_head(&fid->dlist, (struct hlist_head *)&dentry->d_fsdata);
+fs/./9p/fid.c:	spin_lock(&dentry->d_lock);
+fs/./9p/fid.c:	spin_unlock(&dentry->d_lock);
+fs/./9p/fid.c:	if (dentry->d_fsdata) {
+fs/./9p/fid.c:		struct hlist_head *h = (struct hlist_head *)&dentry->d_fsdata;
+fs/./9p/fid.c:		spin_lock(&dentry->d_lock);
+fs/./9p/fid.c:		spin_unlock(&dentry->d_lock);
+fs/./9p/fid.c:	ds = dentry->d_parent;
+fs/./9p/fid.c:		fid = p9_client_walk(fid, 1, &dentry->d_name.name, 1);
+fs/./9p/fid.c:	fid = v9fs_fid_find(dentry->d_sb->s_root, uid, any);
+fs/./9p/fid.c:		v9fs_fid_add(dentry->d_sb->s_root, fid);
+fs/./9p/fid.c:	if (dentry->d_sb->s_root == dentry)
+fs/./9p/fid.c:		spin_lock(&dentry->d_lock);
+fs/./9p/fid.c:			spin_unlock(&dentry->d_lock);
+fs/./9p/fid.c:			spin_unlock(&dentry->d_lock);
+fs/./9p/fid.h:	return v9fs_fid_lookup(dentry->d_parent);
+fs/./9p/v9fs.h:	return dentry->d_sb->s_fs_info;
+fs/./9p/vfs_dentry.c:	hlist_for_each_safe(p, n, (struct hlist_head *)&dentry->d_fsdata)
+fs/./9p/vfs_dentry.c:	dentry->d_fsdata = NULL;
+fs/./9p/vfs_inode.c:	err = v9fs_t_walk(v9ses, fid, nfid, (char *) dentry->d_name.name,
+fs/./9p/vfs_inode.c:		retval = p9_client_unlinkat(dfid, dentry->d_name.name,
+fs/./9p/vfs_inode.c:	name = dentry->d_name.name;
+fs/./9p/vfs_inode.c:	if (dentry->d_name.len > NAME_MAX)
+fs/./9p/vfs_inode.c:	name = dentry->d_name.name;
+fs/./9p/vfs_inode.c:		retval = p9_client_renameat(olddirfid, old_dentry->d_name.name,
+fs/./9p/vfs_inode.c:					    newdirfid, new_dentry->d_name.name);
+fs/./9p/vfs_inode.c:						  new_dentry->d_name.name);
+fs/./9p/vfs_inode.c:	if (old_dentry->d_parent != new_dentry->d_parent) {
+fs/./9p/vfs_inode.c:	wstat.name = new_dentry->d_name.name;
+fs/./9p/vfs_inode.c:	v9fs_stat2inode(st, d_inode(dentry), dentry->d_sb);
+fs/./9p/vfs_inode_dotl.c:	name = dentry->d_name.name;
+fs/./9p/vfs_inode_dotl.c:	name = dentry->d_name.name;
+fs/./9p/vfs_inode_dotl.c:	name = dentry->d_name.name;
+fs/./9p/vfs_inode_dotl.c:	err = p9_client_link(dfid, oldfid, dentry->d_name.name);
+fs/./9p/vfs_inode_dotl.c:	name = dentry->d_name.name;
+fs/./adfs/dir.c:	error = adfs_dir_lookup_byname(dir, &dentry->d_name, &obj);
+fs/./adfs/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./affs/amigaffs.c:		if (entry_ino == (u32)(long)dentry->d_fsdata) {
+fs/./affs/amigaffs.c:			dentry->d_fsdata = (void *)inode->i_ino;
+fs/./affs/amigaffs.c:	link_ino = (u32)(long)dentry->d_fsdata;
+fs/./affs/amigaffs.c:	dir = d_inode(dentry->d_parent);
+fs/./affs/amigaffs.c:	bh = affs_bread(sb, (u32)(long)dentry->d_fsdata);
+fs/./affs/amigaffs.c:	return affs_test_opt(AFFS_SB(dentry->d_sb)->s_flags, SF_NO_TRUNCATE);
+fs/./affs/amigaffs.c:	u32 len = min(dentry->d_name.len, AFFSNAMEMAX);
+fs/./affs/amigaffs.c:	memcpy(bstr, dentry->d_name.name, len);
+fs/./affs/inode.c:	dentry->d_fsdata = (void *)(long)bh->b_blocknr;
+fs/./affs/namei.c:	const u8 *name = dentry->d_name.name;
+fs/./affs/namei.c:	int len = dentry->d_name.len;
+fs/./affs/namei.c:	key = be32_to_cpu(AFFS_HEAD(bh)->table[affs_hash_name(sb, dentry->d_name.name, dentry->d_name.len)]);
+fs/./affs/namei.c:		dentry->d_fsdata = (void *)(long)ino;
+fs/./affs/namei.c:	retval = affs_check_name(new_dentry->d_name.name,
+fs/./affs/namei.c:				 new_dentry->d_name.len,
+fs/./affs/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./afs/dir.c:		.name = dentry->d_name,
+fs/./afs/dir.c:	const char *devname = dentry->d_name.name;
+fs/./afs/dir.c:	if (dentry->d_name.len >= AFSNAMEMAX) {
+fs/./afs/dir.c:	dentry->d_fsdata = (void *)(unsigned long) vnode->status.data_version;
+fs/./afs/dir.c:	key = afs_request_key(AFS_FS_S(dentry->d_sb)->volume->cell);
+fs/./afs/dir.c:	if (dentry->d_fsdata == dir_version)
+fs/./afs/dir.c:	dentry->d_fsdata = dir_version;
+fs/./afs/dir.c:	spin_lock(&dentry->d_lock);
+fs/./afs/dir.c:	dentry->d_flags |= DCACHE_NFSFS_RENAMED;
+fs/./afs/dir.c:	spin_unlock(&dentry->d_lock);
+fs/./afs/dir.c:	if (dentry->d_flags & DCACHE_NFSFS_RENAMED)
+fs/./afs/dir.c:	ret = afs_vnode_create(dvnode, key, dentry->d_name.name,
+fs/./afs/dir.c:	ret = afs_vnode_remove(dvnode, key, dentry->d_name.name, true);
+fs/./afs/dir.c:	if (dentry->d_name.len >= AFSNAMEMAX)
+fs/./afs/dir.c:	ret = afs_vnode_remove(dvnode, key, dentry->d_name.name, false);
+fs/./afs/dir.c:	ret = afs_vnode_create(dvnode, key, dentry->d_name.name,
+fs/./afs/dir.c:	ret = afs_vnode_link(dvnode, vnode, key, dentry->d_name.name);
+fs/./afs/dir.c:	ret = afs_vnode_symlink(dvnode, key, dentry->d_name.name, content,
+fs/./afs/dir.c:			       old_dentry->d_name.name,
+fs/./afs/dir.c:			       new_dentry->d_name.name);
+fs/./afs/super.c:	buf->f_type	= dentry->d_sb->s_magic;
+fs/./anon_inodes.c:				dentry->d_name.name);
+fs/./attr.c:	struct inode *inode = dentry->d_inode;
+fs/./autofs4/autofs_i.h:	return (struct autofs_info *)(dentry->d_fsdata);
+fs/./autofs4/autofs_i.h:	dentry->d_flags |= (DCACHE_NEED_AUTOMOUNT|DCACHE_MANAGE_TRANSIT);
+fs/./autofs4/autofs_i.h:	spin_lock(&dentry->d_lock);
+fs/./autofs4/autofs_i.h:	spin_unlock(&dentry->d_lock);
+fs/./autofs4/autofs_i.h:	dentry->d_flags &= ~(DCACHE_NEED_AUTOMOUNT|DCACHE_MANAGE_TRANSIT);
+fs/./autofs4/autofs_i.h:	spin_lock(&dentry->d_lock);
+fs/./autofs4/autofs_i.h:	spin_unlock(&dentry->d_lock);
+fs/./autofs4/autofs_i.h:	struct autofs_sb_info *sbi = autofs4_sbi(dentry->d_sb);
+fs/./autofs4/autofs_i.h:	struct autofs_sb_info *sbi = autofs4_sbi(dentry->d_sb);
+fs/./autofs4/autofs_i.h:	struct autofs_sb_info *sbi = autofs4_sbi(dentry->d_sb);
+fs/./autofs4/dev-ioctl.c:		if (path.dentry->d_sb->s_magic == AUTOFS_SUPER_MAGIC) {
+fs/./autofs4/dev-ioctl.c:	return path->dentry->d_sb->s_dev == *(dev_t *)p;
+fs/./autofs4/dev-ioctl.c:		devid = new_encode_dev(path.dentry->d_sb->s_dev);
+fs/./autofs4/dev-ioctl.c:			magic = path.dentry->d_sb->s_magic;
+fs/./autofs4/dev-ioctl.c:			magic = path.dentry->d_sb->s_magic;
+fs/./autofs4/expire.c:		struct autofs_sb_info *sbi = autofs4_sbi(path.dentry->d_sb);
+fs/./autofs4/expire.c:	struct autofs_sb_info *sbi = autofs4_sbi(dentry->d_sb);
+fs/./autofs4/expire.c:	pkt.len = dentry->d_name.len;
+fs/./autofs4/expire.c:	memcpy(pkt.name, dentry->d_name.name, pkt.len);
+fs/./autofs4/root.c:	struct autofs_sb_info *sbi = autofs4_sbi(dentry->d_sb);
+fs/./autofs4/root.c:	struct autofs_sb_info *sbi = autofs4_sbi(dentry->d_sb);
+fs/./autofs4/root.c:	struct autofs_sb_info *sbi = autofs4_sbi(dentry->d_sb);
+fs/./autofs4/root.c:	struct autofs_sb_info *sbi = autofs4_sbi(dentry->d_sb);
+fs/./autofs4/root.c:	struct dentry *parent = dentry->d_parent;
+fs/./autofs4/root.c:	const struct qstr *name = &dentry->d_name;
+fs/./autofs4/root.c:	struct autofs_sb_info *sbi = autofs4_sbi(dentry->d_sb);
+fs/./autofs4/root.c:	struct dentry *parent = dentry->d_parent;
+fs/./autofs4/root.c:	const struct qstr *name = &dentry->d_name;
+fs/./autofs4/root.c:	struct autofs_sb_info *sbi = autofs4_sbi(path->dentry->d_sb);
+fs/./autofs4/root.c:	struct autofs_sb_info *sbi = autofs4_sbi(dentry->d_sb);
+fs/./autofs4/root.c:		struct dentry *parent = dentry->d_parent;
+fs/./autofs4/root.c:		new = d_lookup(parent, &dentry->d_name);
+fs/./autofs4/root.c:	struct autofs_sb_info *sbi = autofs4_sbi(dentry->d_sb);
+fs/./autofs4/root.c:	struct autofs_sb_info *sbi = autofs4_sbi(dentry->d_sb);
+fs/./autofs4/root.c:		if (list_empty(&dentry->d_subdirs))
+fs/./autofs4/root.c:	if (dentry->d_name.len > NAME_MAX)
+fs/./autofs4/root.c:		if (!autofs4_oz_mode(sbi) && !IS_ROOT(dentry->d_parent))
+fs/./autofs4/root.c:		if (IS_ROOT(dentry->d_parent) &&
+fs/./autofs4/root.c:		dentry->d_fsdata = ino;
+fs/./autofs4/root.c:	p_ino = autofs4_dentry_ino(dentry->d_parent);
+fs/./autofs4/root.c:		p_ino = autofs4_dentry_ino(dentry->d_parent);
+fs/./autofs4/root.c:	if (IS_ROOT(dentry->d_parent))
+fs/./autofs4/root.c:	parent = dentry->d_parent;
+fs/./autofs4/root.c:	if (IS_ROOT(dentry->d_parent))
+fs/./autofs4/root.c:	parent = dentry->d_parent;
+fs/./autofs4/root.c:	d_child = &dentry->d_child;
+fs/./autofs4/root.c:		p_ino = autofs4_dentry_ino(dentry->d_parent);
+fs/./autofs4/root.c:		if (p_ino && dentry->d_parent != dentry)
+fs/./autofs4/root.c:	p_ino = autofs4_dentry_ino(dentry->d_parent);
+fs/./autofs4/root.c:		dentry->d_op == &autofs4_dentry_operations &&
+fs/./autofs4/root.c:		dentry->d_fsdata != NULL;
+fs/./autofs4/symlink.c:	sbi = autofs4_sbi(dentry->d_sb);
+fs/./autofs4/waitq.c:	p = buf + len - dentry->d_name.len;
+fs/./autofs4/waitq.c:	strncpy(p, dentry->d_name.name, dentry->d_name.len);
+fs/./autofs4/waitq.c:	for (tmp = dentry->d_parent; tmp != root ; tmp = tmp->d_parent) {
+fs/./autofs4/waitq.c:				struct dentry *parent = dentry->d_parent;
+fs/./autofs4/waitq.c:				new = d_lookup(parent, &dentry->d_name);
+fs/./autofs4/waitq.c:		else if (!IS_ROOT(dentry->d_parent))
+fs/./autofs4/waitq.c:			de = d_lookup(dentry->d_parent, &dentry->d_name);
+fs/./befs/linuxvfs.c:	const char *name = dentry->d_name.name;
+fs/./befs/linuxvfs.c:	struct super_block *sb = dentry->d_sb;
+fs/./bfs/dir.c:	err = bfs_add_entry(dir, dentry->d_name.name, dentry->d_name.len,
+fs/./bfs/dir.c:	if (dentry->d_name.len > BFS_NAMELEN)
+fs/./bfs/dir.c:	bh = bfs_find_entry(dir, dentry->d_name.name, dentry->d_name.len, &de);
+fs/./bfs/dir.c:	bh = bfs_find_entry(dir, dentry->d_name.name, dentry->d_name.len, &de);
+fs/./bfs/dir.c:				old_dentry->d_name.name, 
+fs/./bfs/dir.c:				old_dentry->d_name.len, &old_de);
+fs/./bfs/dir.c:				new_dentry->d_name.name, 
+fs/./bfs/dir.c:				new_dentry->d_name.len, &new_de);
+fs/./bfs/dir.c:					new_dentry->d_name.name,
+fs/./bfs/dir.c:					new_dentry->d_name.len,
+fs/./bfs/inode.c:	struct super_block *s = dentry->d_sb;
+fs/./btrfs/inode.c:			BTRFS_I(d_inode(dentry)), dentry->d_name.name,
+fs/./btrfs/inode.c:			dentry->d_name.len);
+fs/./btrfs/inode.c:					  dentry->d_name.name,
+fs/./btrfs/inode.c:					  dentry->d_name.len);
+fs/./btrfs/inode.c:			BTRFS_I(d_inode(dentry)), dentry->d_name.name,
+fs/./btrfs/inode.c:			dentry->d_name.len);
+fs/./btrfs/inode.c:	const char *name = dentry->d_name.name;
+fs/./btrfs/inode.c:	int namelen = dentry->d_name.len;
+fs/./btrfs/inode.c:	    btrfs_root_ref_name_len(leaf, ref) != dentry->d_name.len)
+fs/./btrfs/inode.c:	ret = memcmp_extent_buffer(leaf, dentry->d_name.name,
+fs/./btrfs/inode.c:				   dentry->d_name.len);
+fs/./btrfs/inode.c:	if (dentry->d_name.len > BTRFS_NAME_LEN)
+fs/./btrfs/inode.c:		inode = d_inode(dentry->d_parent);
+fs/./btrfs/inode.c:	kfree(dentry->d_fsdata);
+fs/./btrfs/inode.c:				 dentry->d_name.name, dentry->d_name.len,
+fs/./btrfs/inode.c:	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
+fs/./btrfs/inode.c:			dentry->d_name.len, btrfs_ino(BTRFS_I(dir)), objectid,
+fs/./btrfs/inode.c:	err = btrfs_init_inode_security(trans, inode, dir, &dentry->d_name);
+fs/./btrfs/inode.c:	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
+fs/./btrfs/inode.c:			dentry->d_name.len, btrfs_ino(BTRFS_I(dir)), objectid,
+fs/./btrfs/inode.c:	err = btrfs_init_inode_security(trans, inode, dir, &dentry->d_name);
+fs/./btrfs/inode.c:		struct dentry *parent = dentry->d_parent;
+fs/./btrfs/inode.c:	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
+fs/./btrfs/inode.c:			dentry->d_name.len, btrfs_ino(BTRFS_I(dir)), objectid,
+fs/./btrfs/inode.c:	err = btrfs_init_inode_security(trans, inode, dir, &dentry->d_name);
+fs/./btrfs/inode.c:			dentry->d_name.name,
+fs/./btrfs/inode.c:			dentry->d_name.len, 0, index);
+fs/./btrfs/inode.c:	struct inode *new_inode = new_dentry->d_inode;
+fs/./btrfs/inode.c:	struct inode *old_inode = old_dentry->d_inode;
+fs/./btrfs/inode.c:					     new_dentry->d_name.name,
+fs/./btrfs/inode.c:					     new_dentry->d_name.len,
+fs/./btrfs/inode.c:					     old_dentry->d_name.name,
+fs/./btrfs/inode.c:					     old_dentry->d_name.len,
+fs/./btrfs/inode.c:	if (old_dentry->d_parent != new_dentry->d_parent) {
+fs/./btrfs/inode.c:					  old_dentry->d_name.name,
+fs/./btrfs/inode.c:					  old_dentry->d_name.len);
+fs/./btrfs/inode.c:					   BTRFS_I(old_dentry->d_inode),
+fs/./btrfs/inode.c:					   old_dentry->d_name.name,
+fs/./btrfs/inode.c:					   old_dentry->d_name.len);
+fs/./btrfs/inode.c:					  new_dentry->d_name.name,
+fs/./btrfs/inode.c:					  new_dentry->d_name.len);
+fs/./btrfs/inode.c:					   BTRFS_I(new_dentry->d_inode),
+fs/./btrfs/inode.c:					   new_dentry->d_name.name,
+fs/./btrfs/inode.c:					   new_dentry->d_name.len);
+fs/./btrfs/inode.c:			     new_dentry->d_name.name,
+fs/./btrfs/inode.c:			     new_dentry->d_name.len, 0, old_idx);
+fs/./btrfs/inode.c:			     old_dentry->d_name.name,
+fs/./btrfs/inode.c:			     old_dentry->d_name.len, 0, new_idx);
+fs/./btrfs/inode.c:		parent = new_dentry->d_parent;
+fs/./btrfs/inode.c:		parent = old_dentry->d_parent;
+fs/./btrfs/inode.c:				dentry->d_name.name,
+fs/./btrfs/inode.c:				dentry->d_name.len,
+fs/./btrfs/inode.c:				&dentry->d_name);
+fs/./btrfs/inode.c:			     new_dentry->d_name.name,
+fs/./btrfs/inode.c:			     new_dentry->d_name.len);
+fs/./btrfs/inode.c:					     new_dentry->d_name.name,
+fs/./btrfs/inode.c:					     new_dentry->d_name.len,
+fs/./btrfs/inode.c:	if (old_dentry->d_parent != new_dentry->d_parent)
+fs/./btrfs/inode.c:					old_dentry->d_name.name,
+fs/./btrfs/inode.c:					old_dentry->d_name.len);
+fs/./btrfs/inode.c:					old_dentry->d_name.name,
+fs/./btrfs/inode.c:					old_dentry->d_name.len);
+fs/./btrfs/inode.c:						new_dentry->d_name.name,
+fs/./btrfs/inode.c:						new_dentry->d_name.len);
+fs/./btrfs/inode.c:						 new_dentry->d_name.name,
+fs/./btrfs/inode.c:						 new_dentry->d_name.len);
+fs/./btrfs/inode.c:			     new_dentry->d_name.name,
+fs/./btrfs/inode.c:			     new_dentry->d_name.len, 0, index);
+fs/./btrfs/inode.c:		struct dentry *parent = new_dentry->d_parent;
+fs/./btrfs/inode.c:	inode = btrfs_new_inode(trans, root, dir, dentry->d_name.name,
+fs/./btrfs/inode.c:				dentry->d_name.len, btrfs_ino(BTRFS_I(dir)),
+fs/./btrfs/inode.c:	err = btrfs_init_inode_security(trans, inode, dir, &dentry->d_name);
+fs/./btrfs/ioctl.c:	inode = btrfs_lookup_dentry(d_inode(dentry->d_parent), dentry);
+fs/./btrfs/ioctl.c:				dentry->d_name.name,
+fs/./btrfs/ioctl.c:				dentry->d_name.len);
+fs/./btrfs/super.c:	struct btrfs_fs_info *info = btrfs_sb(dentry->d_sb);
+fs/./btrfs/super.c:	struct btrfs_fs_info *fs_info = btrfs_sb(dentry->d_sb);
+fs/./btrfs/super.c:	int bits = dentry->d_sb->s_blocksize_bits;
+fs/./btrfs/super.c:	buf->f_bsize = dentry->d_sb->s_blocksize;
+fs/./btrfs/transaction.c:					 dentry->d_name.name,
+fs/./btrfs/transaction.c:					 dentry->d_name.len, 0);
+fs/./btrfs/transaction.c:				 dentry->d_name.name, dentry->d_name.len);
+fs/./btrfs/transaction.c:				    dentry->d_name.name, dentry->d_name.len,
+fs/./btrfs/transaction.c:					 dentry->d_name.len * 2);
+fs/./cachefiles/bind.c:			   fsdef->dentry->d_sb->s_id);
+fs/./cachefiles/namei.c:	ASSERT(object->dentry->d_parent);
+fs/./cachefiles/namei.c:		if (dir == object->dentry->d_parent) {
+fs/./cachefiles/namei.c:			if (object->dentry->d_sb->s_blocksize > PAGE_SIZE)
+fs/./ceph/caps.c:	spin_lock(&dentry->d_lock);
+fs/./ceph/caps.c:		parent = dget(dentry->d_parent);
+fs/./ceph/caps.c:	spin_unlock(&dentry->d_lock);
+fs/./ceph/caps.c:	spin_lock(&dentry->d_lock);
+fs/./ceph/caps.c:		rel->dname_len = cpu_to_le32(dentry->d_name.len);
+fs/./ceph/caps.c:		memcpy(*p, dentry->d_name.name, dentry->d_name.len);
+fs/./ceph/caps.c:		*p += dentry->d_name.len;
+fs/./ceph/caps.c:	spin_unlock(&dentry->d_lock);
+fs/./ceph/debugfs.c:			spin_lock(&req->r_dentry->d_lock);
+fs/./ceph/debugfs.c:				   ceph_ino(d_inode(req->r_dentry->d_parent)),
+fs/./ceph/debugfs.c:			spin_unlock(&req->r_dentry->d_lock);
+fs/./ceph/debugfs.c:			spin_lock(&req->r_old_dentry->d_lock);
+fs/./ceph/debugfs.c:			spin_unlock(&req->r_old_dentry->d_lock);
+fs/./ceph/dir.c:	dentry->d_fsdata = di;
+fs/./ceph/dir.c:	if (dentry && !lockref_get_not_dead(&dentry->d_lockref))
+fs/./ceph/dir.c:			spin_lock(&dentry->d_lock);
+fs/./ceph/dir.c:			spin_unlock(&dentry->d_lock);
+fs/./ceph/dir.c:		spin_lock(&dentry->d_lock);
+fs/./ceph/dir.c:		spin_unlock(&dentry->d_lock);
+fs/./ceph/dir.c:			if (!dir_emit(ctx, dentry->d_name.name,
+fs/./ceph/dir.c:				      dentry->d_name.len,
+fs/./ceph/dir.c:				      ceph_translate_ino(dentry->d_sb,
+fs/./ceph/dir.c:	struct ceph_fs_client *fsc = ceph_sb_to_client(dentry->d_sb);
+fs/./ceph/dir.c:	struct inode *parent = d_inode(dentry->d_parent); /* we hold i_mutex */
+fs/./ceph/dir.c:	    strcmp(dentry->d_name.name,
+fs/./ceph/dir.c:		strncmp(dentry->d_name.name, ".ceph", 5) == 0;
+fs/./ceph/dir.c:	if (dentry->d_name.len > NAME_MAX)
+fs/./ceph/dir.c:		if (strncmp(dentry->d_name.name,
+fs/./ceph/dir.c:			    dentry->d_name.len) &&
+fs/./ceph/dir.c:	spin_lock(&dentry->d_lock);
+fs/./ceph/dir.c:	spin_unlock(&dentry->d_lock);
+fs/./ceph/dir.c:	spin_lock(&dentry->d_lock);
+fs/./ceph/dir.c:	spin_unlock(&dentry->d_lock);
+fs/./ceph/dir.c:		parent = READ_ONCE(dentry->d_parent);
+fs/./ceph/dir.c:	spin_lock(&dentry->d_lock);
+fs/./ceph/dir.c:	dentry->d_fsdata = NULL;
+fs/./ceph/dir.c:	spin_unlock(&dentry->d_lock);
+fs/./ceph/dir.c: * Called under dentry->d_lock.
+fs/./ceph/dir.c:	if (ceph_snap(d_inode(dentry->d_parent)) == CEPH_SNAPDIR)
+fs/./ceph/dir.c:	ceph_dir_clear_complete(d_inode(dentry->d_parent));
+fs/./ceph/dir.c:	mdsc->num_dentry--;
+fs/./ceph/file.c:	if (dentry->d_name.len > NAME_MAX)
+fs/./ceph/inode.c:	spin_lock(&dentry->d_lock);
+fs/./ceph/inode.c:	dir = d_inode(dentry->d_parent);
+fs/./ceph/inode.c:	spin_unlock(&dentry->d_lock);
+fs/./ceph/inode.c:	    (rinfo->head->is_target || strncmp(req->r_dentry->d_name.name,
+fs/./ceph/inode.c:					       req->r_dentry->d_name.len))) {
+fs/./ceph/inode.c:		in = ceph_get_inode(req->r_dentry->d_sb, vino);
+fs/./ceph/mds_client.c:		dentry = dentry->d_parent;
+fs/./ceph/mds_client.c:		parent = req->r_dentry->d_parent;
+fs/./ceph/mds_client.c:		dir = d_inode_rcu(dentry->d_parent);
+fs/./ceph/mds_client.c:		*ppath = dentry->d_name.name;
+fs/./ceph/mds_client.c:		*ppathlen = dentry->d_name.len;
+fs/./ceph/mds_client.c:		len += req->r_dentry->d_name.len;
+fs/./ceph/mds_client.c:		len += req->r_old_dentry->d_name.len;
+fs/./ceph/mds_client.c: * caller must hold session s_mutex, dentry->d_lock
+fs/./ceph/mds_client.c:	spin_lock(&dentry->d_lock);
+fs/./ceph/mds_client.c:	spin_unlock(&dentry->d_lock);
+fs/./ceph/mds_client.c:	dnamelen = dentry->d_name.len;
+fs/./ceph/mds_client.c:	memcpy((void *)(lease + 1) + 4, dentry->d_name.name, dnamelen);
+fs/./ceph/super.h:	return (struct ceph_dentry_info *)dentry->d_fsdata;
+fs/./cifs/cifsfs.c:	struct super_block *sb = dentry->d_sb;
+fs/./cifs/cifsfs.h:	dentry->d_fsdata = (void *) time;
+fs/./cifs/cifsfs.h:	return (unsigned long) dentry->d_fsdata;
+fs/./cifs/dir.c:	struct nls_table *codepage = CIFS_SB(dentry->d_sb)->local_nls;
+fs/./cifs/dir.c:	struct nls_table *codepage = CIFS_SB(dentry->d_sb)->local_nls;
+fs/./cifs/file.c:	struct cifs_sb_info *cifs_sb = CIFS_SB(cfile->dentry->d_sb);
+fs/./cifs/file.c:	struct cifs_sb_info *cifs_sb = CIFS_SB(cfile->dentry->d_sb);
+fs/./cifs/file.c:	cifs_sb = CIFS_SB(dentry->d_sb);
+fs/./cifs/file.c:	struct cifs_sb_info *cifs_sb = CIFS_SB(cfile->dentry->d_sb);
+fs/./cifs/file.c:	cifs_sb = CIFS_SB(dentry->d_sb);
+fs/./cifs/file.c:	set_bit(CIFS_INO_INVALID_MAPPING, &CIFS_I(dentry->d_inode)->flags);
+fs/./cifs/file.c:	cifs_sb = CIFS_SB(ctx->cfile->dentry->d_sb);
+fs/./cifs/inode.c:	CIFSSMBRenameOpenFile(xid, tcon, fid.netfid, dentry->d_name.name,
+fs/./cifs/inode.c:	struct cifs_sb_info *cifs_sb = CIFS_SB(from_dentry->d_sb);
+fs/./cifs/inode.c:	if (to_dentry->d_parent != from_dentry->d_parent)
+fs/./cifs/inode.c:				(const char *) to_dentry->d_name.name,
+fs/./cifs/inode.c:	struct super_block *sb = dentry->d_sb;
+fs/./cifs/inode.c:	struct cifs_sb_info *cifs_sb = CIFS_SB(dentry->d_sb);
+fs/./cifs/xattr.c:	struct super_block *sb = dentry->d_sb;
+fs/./cifs/xattr.c:	struct super_block *sb = dentry->d_sb;
+fs/./coda/dir.c:	const char *old_name = old_dentry->d_name.name;
+fs/./coda/dir.c:	const char *new_name = new_dentry->d_name.name;
+fs/./coda/dir.c:	int old_length = old_dentry->d_name.len;
+fs/./coda/dir.c:	int new_length = new_dentry->d_name.len;
+fs/./coda/upcall.c:	error = coda_upcall(coda_vcp(dentry->d_sb), insize, &outsize, inp);
+fs/./configfs/configfs_internal.h:	struct configfs_dirent * sd = dentry->d_fsdata;
+fs/./configfs/configfs_internal.h:	struct configfs_dirent * sd = dentry->d_fsdata;
+fs/./configfs/configfs_internal.h:	spin_lock(&dentry->d_lock);
+fs/./configfs/configfs_internal.h:		struct configfs_dirent * sd = dentry->d_fsdata;
+fs/./configfs/configfs_internal.h:	spin_unlock(&dentry->d_lock);
+fs/./configfs/dir.c:	struct configfs_dirent *sd = dentry->d_fsdata;
+fs/./configfs/dir.c:		dentry->d_fsdata = configfs_get(sd);
+fs/./configfs/dir.c:	struct dentry *p = dentry->d_parent;
+fs/./configfs/dir.c:	error = configfs_dirent_exists(p->d_fsdata, dentry->d_name.name);
+fs/./configfs/dir.c:	configfs_set_dir_dirent_depth(p->d_fsdata, dentry->d_fsdata);
+fs/./configfs/dir.c:		struct configfs_dirent *sd = dentry->d_fsdata;
+fs/./configfs/dir.c:			struct configfs_dirent *sd = dentry->d_fsdata;
+fs/./configfs/dir.c:	dentry->d_fsdata = configfs_get(sd);
+fs/./configfs/dir.c:	struct configfs_dirent * parent_sd = dentry->d_parent->d_fsdata;
+fs/./configfs/dir.c:			if (strcmp(name, dentry->d_name.name))
+fs/./configfs/dir.c:		if (dentry->d_name.len > NAME_MAX)
+fs/./configfs/dir.c:	struct configfs_dirent *parent_sd = dentry->d_fsdata;
+fs/./configfs/dir.c:	struct configfs_dirent *parent_sd = dentry->d_fsdata;
+fs/./configfs/dir.c:		 dentry->d_name.name);
+fs/./configfs/dir.c:	parent_sd = dentry->d_fsdata;
+fs/./configfs/dir.c:	parent_sd = dentry->d_fsdata;
+fs/./configfs/dir.c:		sd = dentry->d_fsdata;
+fs/./configfs/dir.c:	p = target->ci_dentry->d_fsdata;
+fs/./configfs/dir.c:	sd = target->ci_dentry->d_fsdata;
+fs/./configfs/dir.c:				root->cg_item.ci_dentry->d_fsdata,
+fs/./configfs/dir.c:		subsys_sd = target_subsys->su_group.cg_item.ci_dentry->d_fsdata;
+fs/./configfs/dir.c:	sd = dentry->d_parent->d_fsdata;
+fs/./configfs/dir.c:	parent_item = configfs_get_config_item(dentry->d_parent);
+fs/./configfs/dir.c:	name = kmalloc(dentry->d_name.len + 1, GFP_KERNEL);
+fs/./configfs/dir.c:	snprintf(name, dentry->d_name.len + 1, "%s", dentry->d_name.name);
+fs/./configfs/dir.c:		configfs_dir_set_ready(dentry->d_fsdata);
+fs/./configfs/dir.c:	sd = dentry->d_fsdata;
+fs/./configfs/dir.c:	parent_item = configfs_get_config_item(dentry->d_parent);
+fs/./configfs/dir.c:	struct configfs_dirent * parent_sd = dentry->d_fsdata;
+fs/./configfs/dir.c:	struct super_block *sb = dentry->d_sb;
+fs/./configfs/dir.c:	struct configfs_dirent * parent_sd = dentry->d_fsdata;
+fs/./configfs/dir.c:			struct configfs_dirent *sd = dentry->d_fsdata;
+fs/./configfs/dir.c:		configfs_dir_set_ready(group->cg_item.ci_dentry->d_fsdata);
+fs/./configfs/dir.c:			configfs_dir_set_ready(dentry->d_fsdata);
+fs/./configfs/dir.c:	struct dentry *root = dentry->d_sb->s_root;
+fs/./configfs/dir.c:	if (dentry->d_parent != root) {
+fs/./configfs/file.c:	struct config_item * item = to_item(dentry->d_parent);
+fs/./configfs/file.c:	struct config_item *item = to_item(dentry->d_parent);
+fs/./configfs/file.c:	struct config_item * item = to_item(dentry->d_parent);
+fs/./configfs/file.c:	struct config_item *item = configfs_get_config_item(file->f_path.dentry->d_parent);
+fs/./configfs/file.c:	struct config_item * item = to_item(filp->f_path.dentry->d_parent);
+fs/./configfs/file.c:	struct config_item *item = to_item(dentry->d_parent);
+fs/./configfs/inode.c:	struct configfs_dirent * sd = dentry->d_fsdata;
+fs/./configfs/inode.c:	sd = dentry->d_fsdata;
+fs/./configfs/inode.c:	inode = configfs_new_inode(mode, sd, dentry->d_sb);
+fs/./configfs/inode.c:	p_inode = d_inode(dentry->d_parent);
+fs/./configfs/inode.c:		return sd->s_dentry->d_name.name;
+fs/./configfs/inode.c:		spin_lock(&dentry->d_lock);
+fs/./configfs/inode.c:			spin_unlock(&dentry->d_lock);
+fs/./configfs/inode.c:			spin_unlock(&dentry->d_lock);
+fs/./configfs/symlink.c:	struct configfs_dirent *target_sd = item->ci_dentry->d_fsdata;
+fs/./configfs/symlink.c:		if (path->dentry->d_sb == sb) {
+fs/./configfs/symlink.c:	sd = dentry->d_parent->d_fsdata;
+fs/./configfs/symlink.c:	parent_item = configfs_get_config_item(dentry->d_parent);
+fs/./configfs/symlink.c:	ret = get_target(symname, &path, &target_item, dentry->d_sb);
+fs/./configfs/symlink.c:	struct configfs_dirent *sd = dentry->d_fsdata;
+fs/./configfs/symlink.c:	parent_item = configfs_get_config_item(dentry->d_parent);
+fs/./configfs/symlink.c:	configfs_drop_dentry(sd, dentry->d_parent);
+fs/./configfs/symlink.c:	item = configfs_get_config_item(dentry->d_parent);
+fs/./cramfs/inode.c:	struct super_block *sb = dentry->d_sb;
+fs/./cramfs/inode.c:		if (sorted && (dentry->d_name.name[0] < name[0]))
+fs/./cramfs/inode.c:		if (((dentry->d_name.len + 3) & ~3) != namelen)
+fs/./cramfs/inode.c:		if (namelen != dentry->d_name.len)
+fs/./cramfs/inode.c:		retval = memcmp(dentry->d_name.name, name, namelen);
+fs/./crypto/crypto.c:	spin_lock(&dentry->d_lock);
+fs/./crypto/crypto.c:	cached_with_key = dentry->d_flags & DCACHE_ENCRYPTED_WITH_KEY;
+fs/./crypto/crypto.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c: * dentry->d_sb->s_dentry_lru_lock protects:
+fs/./dcache.c: * dentry->d_inode->i_lock
+fs/./dcache.c: *   dentry->d_lock
+fs/./dcache.c: *     dentry->d_sb->s_dentry_lru_lock
+fs/./dcache.c: * dentry->d_parent->...->d_parent->d_lock
+fs/./dcache.c: *     dentry->d_parent->d_lock
+fs/./dcache.c: *       dentry->d_lock
+fs/./dcache.c:	const unsigned char *cs = lockless_dereference(dentry->d_name.name);
+fs/./dcache.c:	return container_of(dentry->d_name.name, struct external_name, name[0]);
+fs/./dcache.c:	return dentry->d_name.name != dentry->d_iname;
+fs/./dcache.c:	dentry->d_inode = inode;
+fs/./dcache.c:	flags = READ_ONCE(dentry->d_flags);
+fs/./dcache.c:	WRITE_ONCE(dentry->d_flags, flags);
+fs/./dcache.c:	unsigned flags = READ_ONCE(dentry->d_flags);
+fs/./dcache.c:	WRITE_ONCE(dentry->d_flags, flags);
+fs/./dcache.c:	dentry->d_inode = NULL;
+fs/./dcache.c:	WARN_ON(!hlist_unhashed(&dentry->d_u.d_alias));
+fs/./dcache.c:			call_rcu(&dentry->d_u.d_rcu, __d_free_external);
+fs/./dcache.c:	if (!(dentry->d_flags & DCACHE_RCUACCESS))
+fs/./dcache.c:		__d_free(&dentry->d_u.d_rcu);
+fs/./dcache.c:		call_rcu(&dentry->d_u.d_rcu, __d_free);
+fs/./dcache.c:	__releases(dentry->d_lock)
+fs/./dcache.c:	__releases(dentry->d_inode->i_lock)
+fs/./dcache.c:	struct inode *inode = dentry->d_inode;
+fs/./dcache.c:		raw_write_seqcount_begin(&dentry->d_seq);
+fs/./dcache.c:	hlist_del_init(&dentry->d_u.d_alias);
+fs/./dcache.c:		raw_write_seqcount_end(&dentry->d_seq);
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	if (dentry->d_op && dentry->d_op->d_iput)
+fs/./dcache.c:		dentry->d_op->d_iput(dentry, inode);
+fs/./dcache.c:	dentry->d_flags |= DCACHE_LRU_LIST;
+fs/./dcache.c:	WARN_ON_ONCE(!list_lru_add(&dentry->d_sb->s_dentry_lru, &dentry->d_lru));
+fs/./dcache.c:	dentry->d_flags &= ~DCACHE_LRU_LIST;
+fs/./dcache.c:	WARN_ON_ONCE(!list_lru_del(&dentry->d_sb->s_dentry_lru, &dentry->d_lru));
+fs/./dcache.c:	list_del_init(&dentry->d_lru);
+fs/./dcache.c:	dentry->d_flags &= ~(DCACHE_SHRINK_LIST | DCACHE_LRU_LIST);
+fs/./dcache.c:	list_add(&dentry->d_lru, list);
+fs/./dcache.c:	dentry->d_flags |= DCACHE_SHRINK_LIST | DCACHE_LRU_LIST;
+fs/./dcache.c:	dentry->d_flags &= ~DCACHE_LRU_LIST;
+fs/./dcache.c:	list_lru_isolate(lru, &dentry->d_lru);
+fs/./dcache.c:	dentry->d_flags |= DCACHE_SHRINK_LIST;
+fs/./dcache.c:	list_lru_isolate_move(lru, &dentry->d_lru, list);
+fs/./dcache.c:	if (unlikely(!(dentry->d_flags & DCACHE_LRU_LIST)))
+fs/./dcache.c:	else if (unlikely(!(dentry->d_flags & DCACHE_REFERENCED)))
+fs/./dcache.c:		dentry->d_flags |= DCACHE_REFERENCED;
+fs/./dcache.c: * __d_drop requires dentry->d_lock.
+fs/./dcache.c:			b = &dentry->d_sb->s_anon;
+fs/./dcache.c:			b = d_hash(dentry->d_name.hash);
+fs/./dcache.c:		__hlist_bl_del(&dentry->d_hash);
+fs/./dcache.c:		dentry->d_hash.pprev = NULL;
+fs/./dcache.c:		write_seqcount_invalidate(&dentry->d_seq);
+fs/./dcache.c:	spin_lock(&dentry->d_lock);
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	dentry->d_flags |= DCACHE_DENTRY_KILLED;
+fs/./dcache.c:	if (unlikely(list_empty(&dentry->d_child)))
+fs/./dcache.c:	__list_del_entry(&dentry->d_child);
+fs/./dcache.c:	while (dentry->d_child.next != &parent->d_subdirs) {
+fs/./dcache.c:		next = list_entry(dentry->d_child.next, struct dentry, d_child);
+fs/./dcache.c:		dentry->d_child.next = next->d_child.next;
+fs/./dcache.c:		parent = dentry->d_parent;
+fs/./dcache.c:	lockref_mark_dead(&dentry->d_lockref);
+fs/./dcache.c:	if (dentry->d_flags & DCACHE_OP_PRUNE)
+fs/./dcache.c:		dentry->d_op->d_prune(dentry);
+fs/./dcache.c:	if (dentry->d_flags & DCACHE_LRU_LIST) {
+fs/./dcache.c:		if (!(dentry->d_flags & DCACHE_SHRINK_LIST))
+fs/./dcache.c:	if (dentry->d_inode)
+fs/./dcache.c:		spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	if (dentry->d_op && dentry->d_op->d_release)
+fs/./dcache.c:		dentry->d_op->d_release(dentry);
+fs/./dcache.c:	spin_lock(&dentry->d_lock);
+fs/./dcache.c:	if (dentry->d_flags & DCACHE_SHRINK_LIST) {
+fs/./dcache.c:		dentry->d_flags |= DCACHE_MAY_FREE;
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c: * dentry->d_lock must be held, returns with it unlocked.
+fs/./dcache.c:	__releases(dentry->d_lock)
+fs/./dcache.c:	struct inode *inode = dentry->d_inode;
+fs/./dcache.c:		parent = dentry->d_parent;
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	struct dentry *parent = dentry->d_parent;
+fs/./dcache.c:	if (unlikely(dentry->d_lockref.count < 0))
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	parent = ACCESS_ONCE(dentry->d_parent);
+fs/./dcache.c:	 * Any changes of dentry->d_parent must have
+fs/./dcache.c:	if (unlikely(parent != dentry->d_parent)) {
+fs/./dcache.c:		spin_lock_nested(&dentry->d_lock, DENTRY_D_LOCK_NESTED);
+fs/./dcache.c:	if (unlikely(dentry->d_flags & DCACHE_OP_DELETE))
+fs/./dcache.c:		return lockref_put_or_lock(&dentry->d_lockref);
+fs/./dcache.c:	ret = lockref_put_return(&dentry->d_lockref);
+fs/./dcache.c:		spin_lock(&dentry->d_lock);
+fs/./dcache.c:		if (dentry->d_lockref.count > 1) {
+fs/./dcache.c:			dentry->d_lockref.count--;
+fs/./dcache.c:			spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	d_flags = ACCESS_ONCE(dentry->d_flags);
+fs/./dcache.c:	spin_lock(&dentry->d_lock);
+fs/./dcache.c:	if (dentry->d_lockref.count) {
+fs/./dcache.c:		spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	dentry->d_lockref.count = 1;
+fs/./dcache.c:	if (unlikely(dentry->d_flags & DCACHE_DISCONNECTED))
+fs/./dcache.c:	if (unlikely(dentry->d_flags & DCACHE_OP_DELETE)) {
+fs/./dcache.c:		if (dentry->d_op->d_delete(dentry))
+fs/./dcache.c:	dentry->d_lockref.count--;
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	dentry->d_lockref.count++;
+fs/./dcache.c:	lockref_get(&dentry->d_lockref);
+fs/./dcache.c:	ret = ACCESS_ONCE(dentry->d_parent);
+fs/./dcache.c:		if (likely(ret == ACCESS_ONCE(dentry->d_parent)))
+fs/./dcache.c:	ret = dentry->d_parent;
+fs/./dcache.c:	if (unlikely(ret != dentry->d_parent)) {
+fs/./dcache.c:		spin_lock(&dentry->d_lock);
+fs/./dcache.c:		if (!dentry->d_lockref.count) {
+fs/./dcache.c:			if (likely(!dentry->d_lockref.count)) {
+fs/./dcache.c:		spin_unlock(&dentry->d_lock);
+fs/./dcache.c:		spin_lock(&dentry->d_lock);
+fs/./dcache.c:		if (dentry->d_lockref.count > 0) {
+fs/./dcache.c:			spin_unlock(&dentry->d_lock);
+fs/./dcache.c:		if (unlikely(dentry->d_flags & DCACHE_DENTRY_KILLED)) {
+fs/./dcache.c:			bool can_free = dentry->d_flags & DCACHE_MAY_FREE;
+fs/./dcache.c:			spin_unlock(&dentry->d_lock);
+fs/./dcache.c:		inode = dentry->d_inode;
+fs/./dcache.c:			spin_unlock(&dentry->d_lock);
+fs/./dcache.c:		while (dentry && !lockref_put_or_lock(&dentry->d_lockref)) {
+fs/./dcache.c:			if (dentry->d_lockref.count != 1) {
+fs/./dcache.c:				dentry->d_lockref.count--;
+fs/./dcache.c:				spin_unlock(&dentry->d_lock);
+fs/./dcache.c:			inode = dentry->d_inode;	/* can't be NULL */
+fs/./dcache.c:				spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	 * we are inverting the lru lock/dentry->d_lock here,
+fs/./dcache.c:	if (!spin_trylock(&dentry->d_lock))
+fs/./dcache.c:	if (dentry->d_lockref.count) {
+fs/./dcache.c:		spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	if (dentry->d_flags & DCACHE_REFERENCED) {
+fs/./dcache.c:		dentry->d_flags &= ~DCACHE_REFERENCED;
+fs/./dcache.c:		spin_unlock(&dentry->d_lock);
+fs/./dcache.c:		 * this point, we've dropped the dentry->d_lock but keep the
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	 * we are inverting the lru lock/dentry->d_lock here,
+fs/./dcache.c:	if (!spin_trylock(&dentry->d_lock))
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:		if (unlikely(dentry->d_flags & DCACHE_DENTRY_CURSOR))
+fs/./dcache.c:		spin_lock_nested(&dentry->d_lock, DENTRY_D_LOCK_NESTED);
+fs/./dcache.c:			spin_unlock(&dentry->d_lock);
+fs/./dcache.c:			spin_unlock(&dentry->d_lock);
+fs/./dcache.c:		if (!list_empty(&dentry->d_subdirs)) {
+fs/./dcache.c:			spin_release(&dentry->d_lock.dep_map, 1, _RET_IP_);
+fs/./dcache.c:		spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	for (p = dentry->d_parent; !IS_ROOT(p); p = p->d_parent) {
+fs/./dcache.c:	spin_lock(&dentry->d_lock);
+fs/./dcache.c:			dentry->d_flags |= DCACHE_MOUNTED;
+fs/./dcache.c: 	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	if (dentry->d_flags & DCACHE_SHRINK_LIST) {
+fs/./dcache.c:		if (dentry->d_flags & DCACHE_LRU_LIST)
+fs/./dcache.c:		if (!dentry->d_lockref.count) {
+fs/./dcache.c:	if (!list_empty(&dentry->d_subdirs))
+fs/./dcache.c:	if (dentry == _data && dentry->d_lockref.count == 1)
+fs/./dcache.c:		       dentry->d_inode ?
+fs/./dcache.c:		       dentry->d_inode->i_ino : 0UL,
+fs/./dcache.c:		       dentry->d_lockref.count,
+fs/./dcache.c:		       dentry->d_sb->s_type->name,
+fs/./dcache.c:		       dentry->d_sb->s_id);
+fs/./dcache.c:	spin_lock(&dentry->d_lock);
+fs/./dcache.c:		spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	if (!dentry->d_inode) {
+fs/./dcache.c:	dentry->d_iname[DNAME_INLINE_LEN-1] = 0;
+fs/./dcache.c:		dname = dentry->d_iname;
+fs/./dcache.c:		dname = dentry->d_iname;
+fs/./dcache.c:	dentry->d_name.len = name->len;
+fs/./dcache.c:	dentry->d_name.hash = name->hash;
+fs/./dcache.c:	dentry->d_name.name = dname;
+fs/./dcache.c:	dentry->d_lockref.count = 1;
+fs/./dcache.c:	dentry->d_flags = 0;
+fs/./dcache.c:	spin_lock_init(&dentry->d_lock);
+fs/./dcache.c:	seqcount_init(&dentry->d_seq);
+fs/./dcache.c:	dentry->d_inode = NULL;
+fs/./dcache.c:	dentry->d_parent = dentry;
+fs/./dcache.c:	dentry->d_sb = sb;
+fs/./dcache.c:	dentry->d_op = NULL;
+fs/./dcache.c:	dentry->d_fsdata = NULL;
+fs/./dcache.c:	INIT_HLIST_BL_NODE(&dentry->d_hash);
+fs/./dcache.c:	INIT_LIST_HEAD(&dentry->d_lru);
+fs/./dcache.c:	INIT_LIST_HEAD(&dentry->d_subdirs);
+fs/./dcache.c:	INIT_HLIST_NODE(&dentry->d_u.d_alias);
+fs/./dcache.c:	INIT_LIST_HEAD(&dentry->d_child);
+fs/./dcache.c:	d_set_d_op(dentry, dentry->d_sb->s_d_op);
+fs/./dcache.c:	if (dentry->d_op && dentry->d_op->d_init) {
+fs/./dcache.c:		err = dentry->d_op->d_init(dentry);
+fs/./dcache.c:	dentry->d_flags |= DCACHE_RCUACCESS;
+fs/./dcache.c:	dentry->d_parent = parent;
+fs/./dcache.c:	list_add(&dentry->d_child, &parent->d_subdirs);
+fs/./dcache.c:		dentry->d_flags |= DCACHE_RCUACCESS | DCACHE_DENTRY_CURSOR;
+fs/./dcache.c:		dentry->d_parent = dget(parent);
+fs/./dcache.c:	WARN_ON_ONCE(dentry->d_op);
+fs/./dcache.c:	WARN_ON_ONCE(dentry->d_flags & (DCACHE_OP_HASH	|
+fs/./dcache.c:	dentry->d_op = op;
+fs/./dcache.c:		dentry->d_flags |= DCACHE_OP_HASH;
+fs/./dcache.c:		dentry->d_flags |= DCACHE_OP_COMPARE;
+fs/./dcache.c:		dentry->d_flags |= DCACHE_OP_REVALIDATE;
+fs/./dcache.c:		dentry->d_flags |= DCACHE_OP_WEAK_REVALIDATE;
+fs/./dcache.c:		dentry->d_flags |= DCACHE_OP_DELETE;
+fs/./dcache.c:		dentry->d_flags |= DCACHE_OP_PRUNE;
+fs/./dcache.c:		dentry->d_flags |= DCACHE_OP_REAL;
+fs/./dcache.c:	spin_lock(&dentry->d_lock);
+fs/./dcache.c:	dentry->d_flags |= DCACHE_FALLTHRU;
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	spin_lock(&dentry->d_lock);
+fs/./dcache.c:	hlist_add_head(&dentry->d_u.d_alias, &inode->i_dentry);
+fs/./dcache.c:	raw_write_seqcount_begin(&dentry->d_seq);
+fs/./dcache.c:	raw_write_seqcount_end(&dentry->d_seq);
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	found = d_hash_and_lookup(dentry->d_parent, name);
+fs/./dcache.c:		found = d_alloc_parallel(dentry->d_parent, name,
+fs/./dcache.c:					dentry->d_wait);
+fs/./dcache.c:		found = d_alloc(dentry->d_parent, name);
+fs/./dcache.c:		if (dentry->d_name.len != name->len)
+fs/./dcache.c:				       dentry->d_name.len, dentry->d_name.name,
+fs/./dcache.c:		seq = raw_seqcount_begin(&dentry->d_seq);
+fs/./dcache.c:		if (dentry->d_parent != parent)
+fs/./dcache.c:			if (dentry->d_name.hash != hashlen_hash(hashlen))
+fs/./dcache.c:			tlen = dentry->d_name.len;
+fs/./dcache.c:			tname = dentry->d_name.name;
+fs/./dcache.c:			if (read_seqcount_retry(&dentry->d_seq, seq)) {
+fs/./dcache.c:			if (dentry->d_name.hash_len != hashlen)
+fs/./dcache.c:		if (dentry->d_name.hash != hash)
+fs/./dcache.c:		spin_lock(&dentry->d_lock);
+fs/./dcache.c:		if (dentry->d_parent != parent)
+fs/./dcache.c:		dentry->d_lockref.count++;
+fs/./dcache.c:		spin_unlock(&dentry->d_lock);
+fs/./dcache.c:		spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	spin_lock(&dentry->d_lock);
+fs/./dcache.c:	inode = dentry->d_inode;
+fs/./dcache.c:	if (dentry->d_lockref.count == 1) {
+fs/./dcache.c:			spin_unlock(&dentry->d_lock);
+fs/./dcache.c:		dentry->d_flags &= ~DCACHE_CANT_MOUNT;
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:		add_wait_queue(dentry->d_wait, &wait);
+fs/./dcache.c:			spin_unlock(&dentry->d_lock);
+fs/./dcache.c:			spin_lock(&dentry->d_lock);
+fs/./dcache.c:		if (!lockref_get_not_dead(&dentry->d_lockref)) {
+fs/./dcache.c:		if (read_seqcount_retry(&dentry->d_seq, d_seq)) {
+fs/./dcache.c:		if (dentry->d_name.hash != hash)
+fs/./dcache.c:		if (dentry->d_parent != parent)
+fs/./dcache.c:		if (!lockref_get_not_dead(&dentry->d_lockref)) {
+fs/./dcache.c:		spin_lock(&dentry->d_lock);
+fs/./dcache.c:		if (unlikely(dentry->d_name.hash != hash))
+fs/./dcache.c:		if (unlikely(dentry->d_parent != parent))
+fs/./dcache.c:		spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	struct hlist_bl_head *b = in_lookup_hash(dentry->d_parent,
+fs/./dcache.c:						 dentry->d_name.hash);
+fs/./dcache.c:	dentry->d_flags &= ~DCACHE_PAR_LOOKUP;
+fs/./dcache.c:	__hlist_bl_del(&dentry->d_u.d_in_lookup_hash);
+fs/./dcache.c:	wake_up_all(dentry->d_wait);
+fs/./dcache.c:	dentry->d_wait = NULL;
+fs/./dcache.c:	INIT_HLIST_NODE(&dentry->d_u.d_alias);
+fs/./dcache.c:	INIT_LIST_HEAD(&dentry->d_lru);
+fs/./dcache.c:	spin_lock(&dentry->d_lock);
+fs/./dcache.c:		dir = dentry->d_parent->d_inode;
+fs/./dcache.c:		hlist_add_head(&dentry->d_u.d_alias, &inode->i_dentry);
+fs/./dcache.c:		raw_write_seqcount_begin(&dentry->d_seq);
+fs/./dcache.c:		raw_write_seqcount_end(&dentry->d_seq);
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	BUG_ON(!inode_is_locked(dentry->d_parent->d_inode));
+fs/./dcache.c:	BUG_ON(dentry->d_name.len != name->len); /* d_lookup gives this */
+fs/./dcache.c:	spin_lock(&dentry->d_lock);
+fs/./dcache.c:	write_seqcount_begin(&dentry->d_seq);
+fs/./dcache.c:	memcpy((unsigned char *)dentry->d_name.name, name->name, name->len);
+fs/./dcache.c:	write_seqcount_end(&dentry->d_seq);
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:			swap(target->d_name.name, dentry->d_name.name);
+fs/./dcache.c:			memcpy(target->d_iname, dentry->d_name.name,
+fs/./dcache.c:					dentry->d_name.len + 1);
+fs/./dcache.c:			dentry->d_name.name = target->d_name.name;
+fs/./dcache.c:			memcpy(dentry->d_iname, target->d_name.name,
+fs/./dcache.c:			target->d_name.name = dentry->d_name.name;
+fs/./dcache.c:			dentry->d_name.name = dentry->d_iname;
+fs/./dcache.c:			kmemcheck_mark_initialized(dentry->d_iname, DNAME_INLINE_LEN);
+fs/./dcache.c:				swap(((long *) &dentry->d_iname)[i],
+fs/./dcache.c:	swap(dentry->d_name.hash_len, target->d_name.hash_len);
+fs/./dcache.c:		dentry->d_name = target->d_name;
+fs/./dcache.c:		memcpy(dentry->d_iname, target->d_name.name,
+fs/./dcache.c:		dentry->d_name.name = dentry->d_iname;
+fs/./dcache.c:		dentry->d_name.hash_len = target->d_name.hash_len;
+fs/./dcache.c:	if (IS_ROOT(dentry) || dentry->d_parent == target->d_parent)
+fs/./dcache.c:		if (d_ancestor(dentry->d_parent, target->d_parent)) {
+fs/./dcache.c:			spin_lock(&dentry->d_parent->d_lock);
+fs/./dcache.c:			spin_lock_nested(&dentry->d_parent->d_lock,
+fs/./dcache.c:		spin_lock_nested(&dentry->d_lock, 3);
+fs/./dcache.c:		spin_lock_nested(&dentry->d_lock, 2);
+fs/./dcache.c:	if (target->d_parent != dentry->d_parent)
+fs/./dcache.c:		spin_unlock(&dentry->d_parent->d_lock);
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	if (!dentry->d_inode)
+fs/./dcache.c:	write_seqcount_begin(&dentry->d_seq);
+fs/./dcache.c:		dentry->d_flags |= DCACHE_RCUACCESS;
+fs/./dcache.c:		dentry->d_parent = target->d_parent;
+fs/./dcache.c:		list_move(&dentry->d_child, &dentry->d_parent->d_subdirs);
+fs/./dcache.c:		swap(dentry->d_parent, target->d_parent);
+fs/./dcache.c:		list_move(&dentry->d_child, &dentry->d_parent->d_subdirs);
+fs/./dcache.c:	write_seqcount_end(&dentry->d_seq);
+fs/./dcache.c: * dentry->d_parent->d_inode->i_mutex, and rename_lock
+fs/./dcache.c:	if (alias->d_parent == dentry->d_parent)
+fs/./dcache.c:	if (!mutex_trylock(&dentry->d_sb->s_vfs_rename_mutex))
+fs/./dcache.c:	m1 = &dentry->d_sb->s_vfs_rename_mutex;
+fs/./dcache.c:					dentry->d_name.name,
+fs/./dcache.c:		parent = dentry->d_parent;
+fs/./dcache.c:		error = prepend_name(&bptr, &blen, &dentry->d_name);
+fs/./dcache.c:	if (path->dentry->d_op && path->dentry->d_op->d_dname &&
+fs/./dcache.c:		return path->dentry->d_op->d_dname(path->dentry, buf, buflen);
+fs/./dcache.c:	    prepend(&end, &buflen, dentry->d_name.name, dentry->d_name.len) ||
+fs/./dcache.c:		struct dentry *parent = dentry->d_parent;
+fs/./dcache.c:		error = prepend_name(&end, &len, &dentry->d_name);
+fs/./dcache.c:		if (d_unhashed(dentry) || !dentry->d_inode)
+fs/./dcache.c:		if (!(dentry->d_flags & DCACHE_GENOCIDE)) {
+fs/./dcache.c:			dentry->d_flags |= DCACHE_GENOCIDE;
+fs/./dcache.c:			dentry->d_lockref.count--;
+fs/./dcache.c:	BUG_ON(dentry->d_name.name != dentry->d_iname ||
+fs/./dcache.c:		!hlist_unhashed(&dentry->d_u.d_alias) ||
+fs/./dcache.c:	spin_lock(&dentry->d_parent->d_lock);
+fs/./dcache.c:	spin_lock_nested(&dentry->d_lock, DENTRY_D_LOCK_NESTED);
+fs/./dcache.c:	dentry->d_name.len = sprintf(dentry->d_iname, "#%llu",
+fs/./dcache.c:	spin_unlock(&dentry->d_lock);
+fs/./dcache.c:	spin_unlock(&dentry->d_parent->d_lock);
+fs/./dcookies.c:	if (path->dentry->d_flags & DCACHE_COOKIE) {
+fs/./debugfs/inode.c:	f = (debugfs_automount_t)path->dentry->d_fsdata;
+fs/./debugfs/inode.c:	inode_unlock(d_inode(dentry->d_parent));
+fs/./debugfs/inode.c:	inode_unlock(d_inode(dentry->d_parent));
+fs/./debugfs/inode.c:	inode = debugfs_get_inode(dentry->d_sb);
+fs/./debugfs/inode.c:	dentry->d_fsdata = (void *)real_fops;
+fs/./debugfs/inode.c:	fsnotify_create(d_inode(dentry->d_parent), dentry);
+fs/./debugfs/inode.c:	inode = debugfs_get_inode(dentry->d_sb);
+fs/./debugfs/inode.c:	inc_nlink(d_inode(dentry->d_parent));
+fs/./debugfs/inode.c:	fsnotify_mkdir(d_inode(dentry->d_parent), dentry);
+fs/./debugfs/inode.c:	inode = debugfs_get_inode(dentry->d_sb);
+fs/./debugfs/inode.c:	dentry->d_fsdata = (void *)f;
+fs/./debugfs/inode.c:	inc_nlink(d_inode(dentry->d_parent));
+fs/./debugfs/inode.c:	fsnotify_mkdir(d_inode(dentry->d_parent), dentry);
+fs/./debugfs/inode.c:	inode = debugfs_get_inode(dentry->d_sb);
+fs/./debugfs/inode.c:	parent = dentry->d_parent;
+fs/./debugfs/inode.c:	old_name = fsnotify_oldname_init(old_dentry->d_name.name);
+fs/./devpts/inode.c:		dentry->d_fsdata = priv;
+fs/./devpts/inode.c:	if (dentry->d_sb->s_magic != DEVPTS_SUPER_MAGIC)
+fs/./devpts/inode.c:	return dentry->d_fsdata;
+fs/./devpts/inode.c:	WARN_ON_ONCE(dentry->d_sb->s_magic != DEVPTS_SUPER_MAGIC);
+fs/./devpts/inode.c:	dentry->d_fsdata = NULL;
+fs/./devpts/inode.c:	drop_nlink(dentry->d_inode);
+fs/./ecryptfs/crypto.c:		ecryptfs_dentry->d_sb)->mount_crypt_stat;
+fs/./ecryptfs/crypto.c:			ecryptfs_dentry->d_sb)->mount_crypt_stat;
+fs/./ecryptfs/dentry.c:	if (lower_dentry->d_flags & DCACHE_OP_REVALIDATE)
+fs/./ecryptfs/dentry.c:		rc = lower_dentry->d_op->d_revalidate(lower_dentry, flags);
+fs/./ecryptfs/dentry.c:	struct ecryptfs_dentry_info *p = dentry->d_fsdata;
+fs/./ecryptfs/ecryptfs_kernel.h:	return (struct ecryptfs_dentry_info *)dentry->d_fsdata;
+fs/./ecryptfs/ecryptfs_kernel.h:	dentry->d_fsdata = dentry_info;
+fs/./ecryptfs/ecryptfs_kernel.h:	return ((struct ecryptfs_dentry_info *)dentry->d_fsdata)->lower_path.dentry;
+fs/./ecryptfs/ecryptfs_kernel.h:	return ((struct ecryptfs_dentry_info *)dentry->d_fsdata)->lower_path.mnt;
+fs/./ecryptfs/ecryptfs_kernel.h:	return &((struct ecryptfs_dentry_info *)dentry->d_fsdata)->lower_path;
+fs/./ecryptfs/inode.c:	lower_mnt = mntget(ecryptfs_dentry_to_lower_mnt(dentry->d_parent));
+fs/./ecryptfs/inode.c:	fsstack_copy_attr_atime(d_inode(dentry->d_parent),
+fs/./ecryptfs/inode.c:				d_inode(lower_dentry->d_parent));
+fs/./ecryptfs/inode.c:	inode = __ecryptfs_get_inode(lower_inode, dentry->d_sb);
+fs/./ecryptfs/inode.c:	const char *name = ecryptfs_dentry->d_name.name;
+fs/./ecryptfs/inode.c:	size_t len = ecryptfs_dentry->d_name.len;
+fs/./ecryptfs/inode.c:	lower_dir_dentry = ecryptfs_dentry_to_lower(ecryptfs_dentry->d_parent);
+fs/./ecryptfs/inode.c:				ecryptfs_dentry->d_sb)->mount_crypt_stat;
+fs/./ecryptfs/inode.c:	rc = ecryptfs_decode_and_decrypt_filename(&buf, bufsiz, dentry->d_sb,
+fs/./ecryptfs/inode.c:			dentry->d_sb)->mount_crypt_stat;
+fs/./ecryptfs/inode.c:						dentry->d_sb)->mount_crypt_stat;
+fs/./ecryptfs/keystore.c:			ecryptfs_dentry->d_sb)->mount_crypt_stat;
+fs/./ecryptfs/main.c:	if (path.dentry->d_sb->s_type == &ecryptfs_fs_type) {
+fs/./ecryptfs/main.c:	ecryptfs_set_superblock_lower(s, path.dentry->d_sb);
+fs/./ecryptfs/main.c:	s->s_flags |= path.dentry->d_sb->s_flags & MS_POSIXACL;
+fs/./ecryptfs/main.c:	if (path.dentry->d_sb->s_flags & MS_RDONLY ||
+fs/./ecryptfs/main.c:	s->s_maxbytes = path.dentry->d_sb->s_maxbytes;
+fs/./ecryptfs/main.c:	s->s_blocksize = path.dentry->d_sb->s_blocksize;
+fs/./ecryptfs/main.c:	s->s_stack_depth = path.dentry->d_sb->s_stack_depth + 1;
+fs/./ecryptfs/super.c:	if (!lower_dentry->d_sb->s_op->statfs)
+fs/./ecryptfs/super.c:	rc = lower_dentry->d_sb->s_op->statfs(lower_dentry, buf);
+fs/./ecryptfs/super.c:	       &ecryptfs_superblock_to_private(dentry->d_sb)->mount_crypt_stat);
+fs/./efivarfs/inode.c:	if (!efivarfs_valid_name(dentry->d_name.name, dentry->d_name.len))
+fs/./efivarfs/inode.c:	namelen = dentry->d_name.len - EFI_VARIABLE_GUID_LEN - 1;
+fs/./efivarfs/inode.c:	uuid_le_to_bin(dentry->d_name.name + namelen + 1, &var->var.VendorGuid);
+fs/./efivarfs/inode.c:					 dentry->d_name.name, namelen))
+fs/./efivarfs/inode.c:		var->var.VariableName[i] = dentry->d_name.name[i];
+fs/./efs/namei.c:	inodenum = efs_find_entry(dir, dentry->d_name.name, dentry->d_name.len);
+fs/./efs/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./eventpoll.c:	name = epi->ffd.file->f_path.dentry->d_name.name;
+fs/./exec.c:	inode = bprm->file->f_path.dentry->d_inode;
+fs/./exofs/common.h: * dentry-related things
+fs/./exofs/dir.c:	const unsigned char *name = dentry->d_name.name;
+fs/./exofs/dir.c:	int namelen = dentry->d_name.len;
+fs/./exofs/dir.c:	struct inode *dir = d_inode(dentry->d_parent);
+fs/./exofs/dir.c:	const unsigned char *name = dentry->d_name.name;
+fs/./exofs/dir.c:	int namelen = dentry->d_name.len;
+fs/./exofs/namei.c:	if (dentry->d_name.len > EXOFS_NAME_LEN)
+fs/./exofs/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./exportfs/expfs.c:	while (dentry->d_flags & DCACHE_DISCONNECTED) {
+fs/./exportfs/expfs.c:	while (dentry->d_flags & DCACHE_DISCONNECTED) {
+fs/./exportfs/expfs.c:		spin_lock(&dentry->d_lock);
+fs/./exportfs/expfs.c:		dentry->d_flags &= ~DCACHE_DISCONNECTED;
+fs/./exportfs/expfs.c:		spin_unlock(&dentry->d_lock);
+fs/./exportfs/expfs.c:	inode_lock(dentry->d_inode);
+fs/./exportfs/expfs.c:	inode_unlock(dentry->d_inode);
+fs/./exportfs/expfs.c:			__func__, dentry->d_inode->i_ino, PTR_ERR(parent));
+fs/./exportfs/expfs.c:		dentry->d_inode->i_ino, parent->d_inode->i_ino);
+fs/./exportfs/expfs.c:	while (dentry->d_flags & DCACHE_DISCONNECTED) {
+fs/./exportfs/expfs.c:	struct inode *dir = path->dentry->d_inode;
+fs/./exportfs/expfs.c:	struct inode *inode = dentry->d_inode, *parent = NULL;
+fs/./ext2/dir.c:	struct inode *dir = d_inode(dentry->d_parent);
+fs/./ext2/dir.c:	const char *name = dentry->d_name.name;
+fs/./ext2/dir.c:	int namelen = dentry->d_name.len;
+fs/./ext2/namei.c:	if (dentry->d_name.len > EXT2_NAME_LEN)
+fs/./ext2/namei.c:	ino = ext2_inode_by_name(dir, &dentry->d_name);
+fs/./ext2/namei.c:	inode = ext2_new_inode(dir, mode, &dentry->d_name);
+fs/./ext2/namei.c:	inode = ext2_new_inode (dir, mode, &dentry->d_name);
+fs/./ext2/namei.c:	inode = ext2_new_inode (dir, S_IFLNK | S_IRWXUGO, &dentry->d_name);
+fs/./ext2/namei.c:	inode = ext2_new_inode(dir, S_IFDIR | mode, &dentry->d_name);
+fs/./ext2/namei.c:	de = ext2_find_entry (dir, &dentry->d_name, &page);
+fs/./ext2/namei.c:	old_de = ext2_find_entry (old_dir, &old_dentry->d_name, &old_page);
+fs/./ext2/namei.c:		new_de = ext2_find_entry (new_dir, &new_dentry->d_name, &new_page);
+fs/./ext2/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./ext2/xattr_user.c:	return test_opt(dentry->d_sb, XATTR_USER);
+fs/./ext4/fsync.c:		next = igrab(d_inode(dentry->d_parent));
+fs/./ext4/namei.c:       if (dentry->d_name.len > EXT4_NAME_LEN)
+fs/./ext4/namei.c:	bh = ext4_find_entry(dir, &dentry->d_name, &de, NULL);
+fs/./ext4/namei.c:	struct inode *dir = d_inode(dentry->d_parent);
+fs/./ext4/namei.c:	if (!dentry->d_name.len)
+fs/./ext4/namei.c:	retval = ext4_fname_setup_filename(dir, &dentry->d_name, 0, &fname);
+fs/./ext4/namei.c:	inode = ext4_new_inode_start_handle(dir, mode, &dentry->d_name, 0,
+fs/./ext4/namei.c:	inode = ext4_new_inode_start_handle(dir, mode, &dentry->d_name, 0,
+fs/./ext4/namei.c:					    &dentry->d_name,
+fs/./ext4/namei.c:	bh = ext4_find_entry(dir, &dentry->d_name, &de, NULL);
+fs/./ext4/namei.c:			     dentry->d_name.len, dentry->d_name.name,
+fs/./ext4/namei.c:	bh = ext4_find_entry(dir, &dentry->d_name, &de, NULL);
+fs/./ext4/namei.c:				   dentry->d_name.len, dentry->d_name.name);
+fs/./ext4/namei.c:					    &dentry->d_name, 0, NULL,
+fs/./ext4/namei.c:		       EXT4_I(old_dentry->d_inode)->i_projid)))
+fs/./ext4/namei.c:	    ent->de->name_len != ent->dentry->d_name.len ||
+fs/./ext4/namei.c:	    strncmp(ent->de->name, ent->dentry->d_name.name,
+fs/./ext4/namei.c:						&ent->dentry->d_name);
+fs/./ext4/namei.c:							&ent->dentry->d_name);
+fs/./ext4/namei.c:					 &ent->dentry->d_name, 0, NULL,
+fs/./ext4/namei.c:			EXT4_I(old_dentry->d_inode)->i_projid)))
+fs/./ext4/namei.c:	old.bh = ext4_find_entry(old.dir, &old.dentry->d_name, &old.de, NULL);
+fs/./ext4/namei.c:	new.bh = ext4_find_entry(new.dir, &new.dentry->d_name,
+fs/./ext4/namei.c:			EXT4_I(old_dentry->d_inode)->i_projid)) ||
+fs/./ext4/namei.c:			EXT4_I(new_dentry->d_inode)->i_projid)))
+fs/./ext4/namei.c:	old.bh = ext4_find_entry(old.dir, &old.dentry->d_name,
+fs/./ext4/namei.c:	new.bh = ext4_find_entry(new.dir, &new.dentry->d_name,
+fs/./ext4/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./ext4/super.c:	if (ext4_test_inode_flag(dentry->d_inode, EXT4_INODE_PROJINHERIT) &&
+fs/./ext4/super.c:		ext4_statfs_project(sb, EXT4_I(dentry->d_inode)->i_projid, buf);
+fs/./ext4/super.c:	if (path->dentry->d_sb != sb)
+fs/./ext4/super.c:		if (path->dentry->d_parent != sb->s_root)
+fs/./ext4/super.c:	lockdep_set_quota_inode(path->dentry->d_inode, I_DATA_SEM_QUOTA);
+fs/./ext4/super.c:		lockdep_set_quota_inode(path->dentry->d_inode,
+fs/./ext4/xattr_user.c:	return test_opt(dentry->d_sb, XATTR_USER);
+fs/./f2fs/dir.c:	int slots = GET_DENTRY_SLOTS(le16_to_cpu(dentry->name_len));
+fs/./f2fs/f2fs.h:	return __f2fs_add_link(d_inode(dentry->d_parent), &dentry->d_name,
+fs/./f2fs/inline.c:	memcpy(dentry_blk->dentry_bitmap, inline_dentry->dentry_bitmap,
+fs/./f2fs/inline.c:	memcpy(dentry_blk->dentry, inline_dentry->dentry,
+fs/./f2fs/inline.c:	memcpy(dentry_blk->filename, inline_dentry->filename,
+fs/./f2fs/inline.c:	int slots = GET_DENTRY_SLOTS(le16_to_cpu(dentry->name_len));
+fs/./f2fs/inline.c:	bit_pos = dentry - inline_dentry->dentry;
+fs/./f2fs/inline.c:				&inline_dentry->dentry_bitmap);
+fs/./f2fs/namei.c:		set_cold_files(sbi, inode, dentry->d_name.name);
+fs/./f2fs/namei.c:	if (dentry->d_name.len > F2FS_NAME_LEN)
+fs/./f2fs/namei.c:	de = f2fs_find_entry(dir, &dentry->d_name, &page);
+fs/./f2fs/namei.c:	de = f2fs_find_entry(dir, &dentry->d_name, &page);
+fs/./f2fs/namei.c:	old_entry = f2fs_find_entry(old_dir, &old_dentry->d_name, &old_page);
+fs/./f2fs/namei.c:		new_entry = f2fs_find_entry(new_dir, &new_dentry->d_name,
+fs/./f2fs/namei.c:						&old_dentry->d_name, &old_page);
+fs/./f2fs/namei.c:	old_entry = f2fs_find_entry(old_dir, &old_dentry->d_name, &old_page);
+fs/./f2fs/namei.c:	new_entry = f2fs_find_entry(new_dir, &new_dentry->d_name, &new_page);
+fs/./f2fs/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./f2fs/xattr.c:	struct f2fs_sb_info *sbi = F2FS_SB(dentry->d_sb);
+fs/./fat/file.c:	struct msdos_sb_info *sbi = MSDOS_SB(dentry->d_sb);
+fs/./fat/inode.c:	struct super_block *sb = dentry->d_sb;
+fs/./fat/inode.c:		int err = fat_count_free_clusters(dentry->d_sb);
+fs/./fat/inode.c:	buf->f_type = dentry->d_sb->s_magic;
+fs/./fat/namei_msdos.c:	struct fat_mount_options *options = &MSDOS_SB(dentry->d_sb)->options;
+fs/./fat/namei_msdos.c:	struct fat_mount_options *options = &MSDOS_SB(dentry->d_sb)->options;
+fs/./fat/namei_msdos.c:	err = msdos_find(dir, dentry->d_name.name, dentry->d_name.len, &sinfo);
+fs/./fat/namei_msdos.c:	err = msdos_format_name(dentry->d_name.name, dentry->d_name.len,
+fs/./fat/namei_msdos.c:	is_hid = (dentry->d_name.name[0] == '.') && (msdos_name[0] != '.');
+fs/./fat/namei_msdos.c:	err = msdos_find(dir, dentry->d_name.name, dentry->d_name.len, &sinfo);
+fs/./fat/namei_msdos.c:	err = msdos_format_name(dentry->d_name.name, dentry->d_name.len,
+fs/./fat/namei_msdos.c:	is_hid = (dentry->d_name.name[0] == '.') && (msdos_name[0] != '.');
+fs/./fat/namei_msdos.c:	err = msdos_find(dir, dentry->d_name.name, dentry->d_name.len, &sinfo);
+fs/./fat/namei_msdos.c:	err = msdos_format_name(old_dentry->d_name.name,
+fs/./fat/namei_msdos.c:				old_dentry->d_name.len, old_msdos_name,
+fs/./fat/namei_msdos.c:	err = msdos_format_name(new_dentry->d_name.name,
+fs/./fat/namei_msdos.c:				new_dentry->d_name.len, new_msdos_name,
+fs/./fat/namei_msdos.c:	     (new_dentry->d_name.name[0] == '.') && (new_msdos_name[0] != '.');
+fs/./fat/namei_vfat.c:	return (unsigned long) dentry->d_fsdata;
+fs/./fat/namei_vfat.c:	dentry->d_fsdata = (void *) version;
+fs/./fat/namei_vfat.c:	spin_lock(&dentry->d_lock);
+fs/./fat/namei_vfat.c:	if (vfat_d_version(dentry) != d_inode(dentry->d_parent)->i_version)
+fs/./fat/namei_vfat.c:	spin_unlock(&dentry->d_lock);
+fs/./fat/namei_vfat.c:	struct nls_table *t = MSDOS_SB(dentry->d_sb)->nls_io;
+fs/./fat/namei_vfat.c:	struct nls_table *t = MSDOS_SB(dentry->d_sb)->nls_io;
+fs/./fat/namei_vfat.c:	return IS_ROOT(dentry) && (dentry->d_flags & DCACHE_DISCONNECTED);
+fs/./fat/namei_vfat.c:	err = vfat_find(dir, &dentry->d_name, &sinfo);
+fs/./fat/namei_vfat.c:	 * Checking "alias->d_parent == dentry->d_parent" to make sure
+fs/./fat/namei_vfat.c:	if (alias && alias->d_parent == dentry->d_parent &&
+fs/./fat/namei_vfat.c:	err = vfat_add_entry(dir, &dentry->d_name, 0, 0, &ts, &sinfo);
+fs/./fat/namei_vfat.c:	err = vfat_find(dir, &dentry->d_name, &sinfo);
+fs/./fat/namei_vfat.c:	err = vfat_find(dir, &dentry->d_name, &sinfo);
+fs/./fat/namei_vfat.c:	err = vfat_add_entry(dir, &dentry->d_name, 1, cluster, &ts, &sinfo);
+fs/./fat/namei_vfat.c:	err = vfat_find(old_dir, &old_dentry->d_name, &old_sinfo);
+fs/./fat/namei_vfat.c:		err = vfat_add_entry(new_dir, &new_dentry->d_name, is_dir, 0,
+fs/./fhandle.c:	if (!path->dentry->d_sb->s_export_op ||
+fs/./fhandle.c:	    !path->dentry->d_sb->s_export_op->fh_to_dentry)
+fs/./file_table.c:	file->f_inode = path->dentry->d_inode;
+fs/./file_table.c:	file->f_mapping = path->dentry->d_inode->i_mapping;
+fs/./file_table.c:		i_readcount_inc(path->dentry->d_inode);
+fs/./freevxfs/vxfs_super.c:	struct vxfs_sb_info		*infp = VXFS_SBI(dentry->d_sb);
+fs/./freevxfs/vxfs_super.c:	bufp->f_bsize = dentry->d_sb->s_blocksize;
+fs/./fs-writeback.c:			spin_lock(&dentry->d_lock);
+fs/./fs-writeback.c:			name = (const char *) dentry->d_name.name;
+fs/./fs-writeback.c:			spin_unlock(&dentry->d_lock);
+fs/./fuse/dir.c: * dentry->d_fsdata and fuse_inode->i_time respectively.
+fs/./fuse/dir.c:	dentry->d_fsdata = kzalloc(sizeof(union fuse_dentry), GFP_KERNEL);
+fs/./fuse/dir.c:	return dentry->d_fsdata ? 0 : -ENOMEM;
+fs/./fuse/dir.c:	union fuse_dentry *fd = dentry->d_fsdata;
+fs/./fuse/inode.c:	struct super_block *sb = dentry->d_sb;
+fs/./gfs2/dentry.c:	error = gfs2_dir_check(d_inode(parent), &dentry->d_name, ip);
+fs/./gfs2/dir.c:	const struct qstr *name = &dentry->d_name;
+fs/./gfs2/inode.c:	const struct qstr *name = &dentry->d_name;
+fs/./gfs2/inode.c:	inode = gfs2_dir_search(dir, &dentry->d_name, !S_ISREG(mode) || excl);
+fs/./gfs2/inode.c:	inode = gfs2_lookupi(dir, &dentry->d_name, 0);
+fs/./gfs2/inode.c:	error = gfs2_dir_check(dir, &dentry->d_name, NULL);
+fs/./gfs2/inode.c:	error = gfs2_diradd_alloc_required(dir, &dentry->d_name, &da);
+fs/./gfs2/inode.c:	error = gfs2_dir_add(dir, &dentry->d_name, ip, &da);
+fs/./gfs2/inode.c:	error = gfs2_unlink_ok(dip, &dentry->d_name, ip);
+fs/./gfs2/inode.c:	error = gfs2_unlink_ok(odip, &odentry->d_name, ip);
+fs/./gfs2/inode.c:		error = gfs2_unlink_ok(ndip, &ndentry->d_name, nip);
+fs/./gfs2/inode.c:		error = gfs2_dir_check(ndir, &ndentry->d_name, NULL);
+fs/./gfs2/inode.c:		error = gfs2_diradd_alloc_required(ndir, &ndentry->d_name, &da);
+fs/./gfs2/inode.c:	error = gfs2_dir_add(ndir, &ndentry->d_name, ip, &da);
+fs/./gfs2/inode.c:	struct gfs2_inode *oip = GFS2_I(odentry->d_inode);
+fs/./gfs2/inode.c:	struct gfs2_inode *nip = GFS2_I(ndentry->d_inode);
+fs/./gfs2/inode.c:	error = gfs2_unlink_ok(odip, &odentry->d_name, oip);
+fs/./gfs2/inode.c:	error = gfs2_unlink_ok(ndip, &ndentry->d_name, nip);
+fs/./gfs2/inode.c:		error = gfs2_permission(odentry->d_inode, MAY_WRITE);
+fs/./gfs2/inode.c:		error = gfs2_permission(ndentry->d_inode, MAY_WRITE);
+fs/./gfs2/inode.c:	error = gfs2_dir_mvino(ndip, &ndentry->d_name, oip,
+fs/./gfs2/inode.c:	error = gfs2_dir_mvino(odip, &odentry->d_name, nip,
+fs/./gfs2/ops_fstype.c:		 path.dentry->d_sb->s_bdev);
+fs/./gfs2/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./hfs/dir.c:	hfs_cat_build_key(dir->i_sb, fd.search_key, dir->i_ino, &dentry->d_name);
+fs/./hfs/dir.c:	inode = hfs_new_inode(dir, &dentry->d_name, mode);
+fs/./hfs/dir.c:	res = hfs_cat_create(inode->i_ino, dir, &dentry->d_name, inode);
+fs/./hfs/dir.c:	inode = hfs_new_inode(dir, &dentry->d_name, S_IFDIR | mode);
+fs/./hfs/dir.c:	res = hfs_cat_create(inode->i_ino, dir, &dentry->d_name, inode);
+fs/./hfs/dir.c:	res = hfs_cat_delete(inode->i_ino, dir, &dentry->d_name);
+fs/./hfs/dir.c:			   old_dir, &old_dentry->d_name,
+fs/./hfs/dir.c:			   new_dir, &new_dentry->d_name);
+fs/./hfs/dir.c:				  new_dir->i_ino, &new_dentry->d_name);
+fs/./hfs/inode.c:	if (HFS_IS_RSRC(dir) || strcmp(dentry->d_name.name, "rsrc"))
+fs/./hfs/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./hfsplus/dir.c:	dentry->d_fsdata = (void *)(unsigned long)cnid;
+fs/./hfsplus/dir.c:/* Find the entry inside dir named dentry->d_name */
+fs/./hfsplus/dir.c:	dentry->d_fsdata = NULL;
+fs/./hfsplus/dir.c:			&dentry->d_name);
+fs/./hfsplus/dir.c:		dentry->d_fsdata = (void *)(unsigned long)cnid;
+fs/./hfsplus/dir.c:			if (dentry->d_fsdata) {
+fs/./hfsplus/dir.c:				cnid = (unsigned long)dentry->d_fsdata;
+fs/./hfsplus/dir.c:				dentry->d_fsdata = (void *)(unsigned long)cnid;
+fs/./hfsplus/dir.c:		} else if (!dentry->d_fsdata)
+fs/./hfsplus/dir.c:			dentry->d_fsdata = (void *)(unsigned long)cnid;
+fs/./hfsplus/dir.c:	struct inode *src_dir = d_inode(src_dentry->d_parent);
+fs/./hfsplus/dir.c:	if (inode->i_ino == (u32)(unsigned long)src_dentry->d_fsdata) {
+fs/./hfsplus/dir.c:						 src_dir, &src_dentry->d_name,
+fs/./hfsplus/dir.c:		src_dentry->d_fsdata = (void *)(unsigned long)cnid;
+fs/./hfsplus/dir.c:			&src_dentry->d_name, inode);
+fs/./hfsplus/dir.c:	res = hfsplus_create_cat(cnid, dst_dir, &dst_dentry->d_name, inode);
+fs/./hfsplus/dir.c:	cnid = (u32)(unsigned long)dentry->d_fsdata;
+fs/./hfsplus/dir.c:					 dir, &dentry->d_name,
+fs/./hfsplus/dir.c:	res = hfsplus_delete_cat(cnid, dir, &dentry->d_name);
+fs/./hfsplus/dir.c:	res = hfsplus_delete_cat(inode->i_ino, dir, &dentry->d_name);
+fs/./hfsplus/dir.c:	res = hfsplus_create_cat(inode->i_ino, dir, &dentry->d_name, inode);
+fs/./hfsplus/dir.c:	res = hfsplus_init_inode_security(inode, dir, &dentry->d_name);
+fs/./hfsplus/dir.c:		hfsplus_delete_cat(inode->i_ino, dir, &dentry->d_name);
+fs/./hfsplus/dir.c:	res = hfsplus_create_cat(inode->i_ino, dir, &dentry->d_name, inode);
+fs/./hfsplus/dir.c:	res = hfsplus_init_inode_security(inode, dir, &dentry->d_name);
+fs/./hfsplus/dir.c:		hfsplus_delete_cat(inode->i_ino, dir, &dentry->d_name);
+fs/./hfsplus/dir.c:	res = hfsplus_rename_cat((u32)(unsigned long)old_dentry->d_fsdata,
+fs/./hfsplus/dir.c:				 old_dir, &old_dentry->d_name,
+fs/./hfsplus/dir.c:				 new_dir, &new_dentry->d_name);
+fs/./hfsplus/dir.c:		new_dentry->d_fsdata = old_dentry->d_fsdata;
+fs/./hfsplus/ioctl.c:	u32 cnid = (unsigned long)dentry->d_fsdata;
+fs/./hfsplus/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./hfsplus/unicode.c:	struct super_block *sb = dentry->d_sb;
+fs/./hfsplus/unicode.c:	struct super_block *sb = dentry->d_sb;
+fs/./hostfs/hostfs_kern.c:	root = dentry->d_sb->s_fs_info;
+fs/./hostfs/hostfs_kern.c:	err = do_statfs(dentry->d_sb->s_fs_info,
+fs/./hpfs/dentry.c:		hash = partial_name_hash(hpfs_upcase(hpfs_sb(dentry->d_sb)->sb_cp_table,qstr->name[i]), hash);
+fs/./hpfs/dentry.c:	if (hpfs_compare_names(dentry->d_sb, str, al, name->name, bl, 0))
+fs/./hpfs/dir.c:	const unsigned char *name = dentry->d_name.name;
+fs/./hpfs/dir.c:	unsigned len = dentry->d_name.len;
+fs/./hpfs/namei.c:	const unsigned char *name = dentry->d_name.name;
+fs/./hpfs/namei.c:	unsigned len = dentry->d_name.len;
+fs/./hpfs/namei.c:	const unsigned char *name = dentry->d_name.name;
+fs/./hpfs/namei.c:	unsigned len = dentry->d_name.len;
+fs/./hpfs/namei.c:	const unsigned char *name = dentry->d_name.name;
+fs/./hpfs/namei.c:	unsigned len = dentry->d_name.len;
+fs/./hpfs/namei.c:	const unsigned char *name = dentry->d_name.name;
+fs/./hpfs/namei.c:	unsigned len = dentry->d_name.len;
+fs/./hpfs/namei.c:	const unsigned char *name = dentry->d_name.name;
+fs/./hpfs/namei.c:	unsigned len = dentry->d_name.len;
+fs/./hpfs/namei.c:	const unsigned char *name = dentry->d_name.name;
+fs/./hpfs/namei.c:	unsigned len = dentry->d_name.len;
+fs/./hpfs/namei.c:	const unsigned char *old_name = old_dentry->d_name.name;
+fs/./hpfs/namei.c:	unsigned old_len = old_dentry->d_name.len;
+fs/./hpfs/namei.c:	const unsigned char *new_name = new_dentry->d_name.name;
+fs/./hpfs/namei.c:	unsigned new_len = new_dentry->d_name.len;
+fs/./hpfs/super.c:	struct super_block *s = dentry->d_sb;
+fs/./hugetlbfs/inode.c:	struct hugetlbfs_sb_info *sbinfo = HUGETLBFS_SB(dentry->d_sb);
+fs/./isofs/inode.c:	struct super_block *sb = dentry->d_sb;
+fs/./isofs/namei.c:	if (likely(!dentry->d_op))
+fs/./isofs/namei.c:		return dentry->d_name.len != dlen || memcmp(dentry->d_name.name, compare, dlen);
+fs/./isofs/namei.c:	return dentry->d_op->d_compare(NULL, dentry->d_name.len, dentry->d_name.name, &qstr);
+fs/./jffs2/dir.c:	ret = jffs2_do_create(c, dir_f, f, ri, &dentry->d_name);
+fs/./jffs2/dir.c:	ret = jffs2_do_unlink(c, dir_f, dentry->d_name.name,
+fs/./jffs2/dir.c:			      dentry->d_name.len, dead_f, now);
+fs/./jffs2/dir.c:	struct jffs2_sb_info *c = JFFS2_SB_INFO(old_dentry->d_sb);
+fs/./jffs2/dir.c:	ret = jffs2_do_link(c, dir_f, f->inocache->ino, type, dentry->d_name.name, dentry->d_name.len, now);
+fs/./jffs2/dir.c:	namelen = dentry->d_name.len;
+fs/./jffs2/dir.c:	ret = jffs2_init_security(inode, dir_i, &dentry->d_name);
+fs/./jffs2/dir.c:	rd->name_crc = cpu_to_je32(crc32(0, dentry->d_name.name, namelen));
+fs/./jffs2/dir.c:	fd = jffs2_write_dirent(c, dir_f, rd, dentry->d_name.name, namelen, ALLOC_NORMAL);
+fs/./jffs2/dir.c:	namelen = dentry->d_name.len;
+fs/./jffs2/dir.c:	ret = jffs2_init_security(inode, dir_i, &dentry->d_name);
+fs/./jffs2/dir.c:	rd->name_crc = cpu_to_je32(crc32(0, dentry->d_name.name, namelen));
+fs/./jffs2/dir.c:	fd = jffs2_write_dirent(c, dir_f, rd, dentry->d_name.name, namelen, ALLOC_NORMAL);
+fs/./jffs2/dir.c:	ret = jffs2_do_unlink(c, dir_f, dentry->d_name.name,
+fs/./jffs2/dir.c:			      dentry->d_name.len, f, now);
+fs/./jffs2/dir.c:	namelen = dentry->d_name.len;
+fs/./jffs2/dir.c:	ret = jffs2_init_security(inode, dir_i, &dentry->d_name);
+fs/./jffs2/dir.c:	rd->name_crc = cpu_to_je32(crc32(0, dentry->d_name.name, namelen));
+fs/./jffs2/dir.c:	fd = jffs2_write_dirent(c, dir_f, rd, dentry->d_name.name, namelen, ALLOC_NORMAL);
+fs/./jffs2/dir.c:			    new_dentry->d_name.name, new_dentry->d_name.len, now);
+fs/./jffs2/dir.c:			      old_dentry->d_name.name, old_dentry->d_name.len, NULL, now);
+fs/./jffs2/fs.c:	struct jffs2_sb_info *c = JFFS2_SB_INFO(dentry->d_sb);
+fs/./jfs/jfs_unicode.c:	struct nls_table *nls_tab = JFS_SBI(dentry->d_sb)->nls_tab;
+fs/./jfs/jfs_unicode.c:	int length = dentry->d_name.len;
+fs/./jfs/jfs_unicode.c:	uniName->namlen = jfs_strtoUCS(uniName->name, dentry->d_name.name,
+fs/./jfs/namei.c:	rc = jfs_init_security(tid, ip, dip, &dentry->d_name);
+fs/./jfs/namei.c:	rc = jfs_init_security(tid, ip, dip, &dentry->d_name);
+fs/./jfs/namei.c:	rc = jfs_init_security(tid, ip, dip, &dentry->d_name);
+fs/./jfs/namei.c:	rc = jfs_init_security(tid, ip, dir, &dentry->d_name);
+fs/./jfs/namei.c:	return d_obtain_alias(jfs_iget(dentry->d_sb, parent_ino));
+fs/./jfs/super.c:	struct jfs_sb_info *sbi = JFS_SBI(dentry->d_sb);
+fs/./kernfs/dir.c:	kn = dentry->d_fsdata;
+fs/./kernfs/dir.c:	if (dentry->d_parent->d_fsdata != kn->parent)
+fs/./kernfs/dir.c:	if (strcmp(dentry->d_name.name, kn->name) != 0)
+fs/./kernfs/dir.c:	    kernfs_info(dentry->d_sb)->ns != kn->ns)
+fs/./kernfs/dir.c:	kernfs_put(dentry->d_fsdata);
+fs/./kernfs/dir.c:	if (dentry->d_sb->s_op == &kernfs_sops)
+fs/./kernfs/dir.c:		return dentry->d_fsdata;
+fs/./kernfs/dir.c:	struct kernfs_node *parent = dentry->d_parent->d_fsdata;
+fs/./kernfs/dir.c:	kn = kernfs_find_ns(parent, dentry->d_name.name, ns);
+fs/./kernfs/dir.c:	dentry->d_fsdata = kn;
+fs/./kernfs/dir.c:	ret = scops->mkdir(parent, dentry->d_name.name, mode);
+fs/./kernfs/dir.c:	struct kernfs_node *kn  = dentry->d_fsdata;
+fs/./kernfs/dir.c:	struct kernfs_node *kn  = old_dentry->d_fsdata;
+fs/./kernfs/dir.c:	ret = scops->rename(kn, new_parent, new_dentry->d_name.name);
+fs/./kernfs/dir.c:	struct kernfs_node *parent = dentry->d_fsdata;
+fs/./kernfs/dir.c:		ns = kernfs_info(dentry->d_sb)->ns;
+fs/./kernfs/file.c:	struct kernfs_node *kn = file->f_path.dentry->d_fsdata;
+fs/./kernfs/file.c:	struct kernfs_node *kn = filp->f_path.dentry->d_fsdata;
+fs/./kernfs/file.c:	struct kernfs_node *kn = filp->f_path.dentry->d_fsdata;
+fs/./kernfs/inode.c:	struct kernfs_node *kn = dentry->d_fsdata;
+fs/./kernfs/inode.c:	struct kernfs_node *kn = dentry->d_fsdata;
+fs/./kernfs/inode.c:	struct kernfs_node *kn = path->dentry->d_fsdata;
+fs/./kernfs/mount.c:	struct kernfs_root *root = kernfs_root(dentry->d_fsdata);
+fs/./kernfs/mount.c:	struct kernfs_node *node = dentry->d_fsdata;
+fs/./kernfs/symlink.c:	struct kernfs_node *kn = dentry->d_fsdata;
+fs/./libfs.c:	buf->f_type = dentry->d_sb->s_magic;
+fs/./libfs.c:	if (dentry->d_name.len > NAME_MAX)
+fs/./libfs.c:	if (!dentry->d_sb->s_d_op)
+fs/./libfs.c:			inode_lock_shared(dentry->d_inode);
+fs/./libfs.c:			to = next_positive(dentry, &dentry->d_subdirs, n);
+fs/./libfs.c:			inode_unlock_shared(dentry->d_inode);
+fs/./libfs.c:		p = &dentry->d_subdirs;
+fs/./libfs.c:	spin_lock(&dentry->d_lock);
+fs/./libfs.c:	list_for_each_entry(child, &dentry->d_subdirs, d_child) {
+fs/./libfs.c:	spin_unlock(&dentry->d_lock);
+fs/./locks.c:	return likely(!(filp->f_path.dentry->d_sb->s_flags & MS_NOREMOTELOCK));
+fs/./locks.c:	struct inode *inode = dentry->d_inode;
+fs/./locks.c:	struct inode *inode = dentry->d_inode;
+fs/./minix/dir.c:	const char * name = dentry->d_name.name;
+fs/./minix/dir.c:	int namelen = dentry->d_name.len;
+fs/./minix/dir.c:	struct inode * dir = d_inode(dentry->d_parent);
+fs/./minix/dir.c:	struct inode *dir = d_inode(dentry->d_parent);
+fs/./minix/dir.c:	const char * name = dentry->d_name.name;
+fs/./minix/dir.c:	int namelen = dentry->d_name.len;
+fs/./minix/inode.c:	struct super_block *sb = dentry->d_sb;
+fs/./minix/inode.c:	struct super_block *sb = path->dentry->d_sb;
+fs/./minix/namei.c:	if (dentry->d_name.len > minix_sb(dir->i_sb)->s_namelen)
+fs/./namei.c:	if (unlikely(!lockref_get_not_dead(&path->dentry->d_lockref))) {
+fs/./namei.c:	return !read_seqcount_retry(&path->dentry->d_seq, seq);
+fs/./namei.c:	if (unlikely(!lockref_get_not_dead(&nd->path.dentry->d_lockref)))
+fs/./namei.c:	if (unlikely(!lockref_get_not_dead(&dentry->d_lockref)))
+fs/./namei.c:	if (unlikely(read_seqcount_retry(&dentry->d_seq, seq))) {
+fs/./namei.c:	if (unlikely(dentry->d_flags & DCACHE_OP_REVALIDATE))
+fs/./namei.c:		return dentry->d_op->d_revalidate(dentry, flags);
+fs/./namei.c:	if (likely(!(dentry->d_flags & DCACHE_OP_WEAK_REVALIDATE)))
+fs/./namei.c:	status = dentry->d_op->d_weak_revalidate(dentry, nd->flags);
+fs/./namei.c:			nd->root_seq = __read_seqcount_begin(&nd->root.dentry->d_seq);
+fs/./namei.c:		nd->inode = nd->path.dentry->d_inode;
+fs/./namei.c:	nd->inode = nd->path.dentry->d_inode;
+fs/./namei.c:	inode = link->dentry->d_inode;
+fs/./namei.c:	if (!path->dentry->d_op || !path->dentry->d_op->d_automount)
+fs/./namei.c:	    path->dentry->d_inode)
+fs/./namei.c:	if (path->dentry->d_sb->s_user_ns != &init_user_ns)
+fs/./namei.c:	mnt = path->dentry->d_op->d_automount(path);
+fs/./namei.c:	while (managed = ACCESS_ONCE(path->dentry->d_flags),
+fs/./namei.c:			BUG_ON(!path->dentry->d_op);
+fs/./namei.c:			BUG_ON(!path->dentry->d_op->d_manage);
+fs/./namei.c:			ret = path->dentry->d_op->d_manage(path, false);
+fs/./namei.c:	return (path->dentry->d_flags & DCACHE_MANAGE_TRANSIT) ?
+fs/./namei.c:		path->dentry->d_op->d_manage(path, true) : 0;
+fs/./namei.c:			return !(path->dentry->d_flags & DCACHE_NEED_AUTOMOUNT);
+fs/./namei.c:		*seqp = read_seqcount_begin(&path->dentry->d_seq);
+fs/./namei.c:		*inode = path->dentry->d_inode;
+fs/./namei.c:		!(path->dentry->d_flags & DCACHE_NEED_AUTOMOUNT);
+fs/./namei.c:		inode = nd->path.dentry->d_inode;
+fs/./namei.c:		nd->seq = read_seqcount_begin(&nd->path.dentry->d_seq);
+fs/./namei.c:	while (managed = ACCESS_ONCE(path->dentry->d_flags),
+fs/./namei.c:			BUG_ON(!path->dentry->d_op);
+fs/./namei.c:			BUG_ON(!path->dentry->d_op->d_manage);
+fs/./namei.c:			ret = path->dentry->d_op->d_manage(path, false);
+fs/./namei.c:	nd->inode = nd->path.dentry->d_inode;
+fs/./namei.c:		if (unlikely(read_seqcount_retry(&dentry->d_seq, seq)))
+fs/./namei.c:		if (read_seqcount_retry(&path->dentry->d_seq, seq))
+fs/./namei.c:			nd->seq = __read_seqcount_begin(&nd->path.dentry->d_seq);
+fs/./namei.c:				nd->inode = nd->path.dentry->d_inode;
+fs/./namei.c:				nd->seq = __read_seqcount_begin(&nd->path.dentry->d_seq);
+fs/./namei.c:			nd->inode = nd->path.dentry->d_inode;
+fs/./namei.c:			nd->inode = nd->path.dentry->d_inode;
+fs/./namei.c:			nd->seq = read_seqcount_begin(&nd->path.dentry->d_seq);
+fs/./namei.c:			nd->inode = nd->path.dentry->d_inode;
+fs/./namei.c:	inode_lock_nested(path->dentry->d_inode, I_MUTEX_PARENT);
+fs/./namei.c:		inode_unlock(path->dentry->d_inode);
+fs/./namei.c: * vfs_path_lookup - lookup a file path relative to a dentry-vfsmount pair
+fs/./namei.c:	struct inode *inode = dentry->d_inode;
+fs/./namei.c:	struct inode *inode = path->dentry->d_inode;
+fs/./namei.c:	s_user_ns = dir->dentry->d_sb->s_user_ns;
+fs/./namei.c:	error = inode_permission(dir->dentry->d_inode, MAY_WRITE | MAY_EXEC);
+fs/./namei.c:	return security_inode_create(dir->dentry->d_inode, dentry, mode);
+fs/./namei.c:	struct inode *dir =  nd->path.dentry->d_inode;
+fs/./namei.c:	if (dentry->d_inode) {
+fs/./namei.c:	if (!dentry->d_inode && (open_flag & O_CREAT)) {
+fs/./namei.c:	if (unlikely(create_error) && !dentry->d_inode) {
+fs/./namei.c:	struct inode *dir = dentry->d_inode;
+fs/./namei.c:	inode_lock_nested(path->dentry->d_inode, I_MUTEX_PARENT);
+fs/./namei.c:	inode_unlock(path->dentry->d_inode);
+fs/./namei.c:	inode_unlock(path->dentry->d_inode);
+fs/./namei.c:	if (!IS_POSIXACL(path.dentry->d_inode))
+fs/./namei.c:			error = vfs_create(path.dentry->d_inode,dentry,mode,true);
+fs/./namei.c:			error = vfs_mknod(path.dentry->d_inode,dentry,mode,
+fs/./namei.c:			error = vfs_mknod(path.dentry->d_inode,dentry,mode,0);
+fs/./namei.c:	if (!IS_POSIXACL(path.dentry->d_inode))
+fs/./namei.c:		error = vfs_mkdir(path.dentry->d_inode, dentry, mode);
+fs/./namei.c:	inode_lock(dentry->d_inode);
+fs/./namei.c:	dentry->d_inode->i_flags |= S_DEAD;
+fs/./namei.c:	inode_unlock(dentry->d_inode);
+fs/./namei.c:	inode_lock_nested(path.dentry->d_inode, I_MUTEX_PARENT);
+fs/./namei.c:	if (!dentry->d_inode) {
+fs/./namei.c:	error = vfs_rmdir(path.dentry->d_inode, dentry);
+fs/./namei.c:	inode_unlock(path.dentry->d_inode);
+fs/./namei.c:	struct inode *target = dentry->d_inode;
+fs/./namei.c:	if (!error && !(dentry->d_flags & DCACHE_NFSFS_RENAMED)) {
+fs/./namei.c:	inode_lock_nested(path.dentry->d_inode, I_MUTEX_PARENT);
+fs/./namei.c:		inode = dentry->d_inode;
+fs/./namei.c:		error = vfs_unlink(path.dentry->d_inode, dentry, &delegated_inode);
+fs/./namei.c:	inode_unlock(path.dentry->d_inode);
+fs/./namei.c:		error = vfs_symlink(path.dentry->d_inode, dentry, from->name);
+fs/./namei.c:	struct inode *inode = old_dentry->d_inode;
+fs/./namei.c:	error = vfs_link(old_path.dentry, new_path.dentry->d_inode, new_dentry, &delegated_inode);
+fs/./namei.c:	struct inode *source = old_dentry->d_inode;
+fs/./namei.c:	struct inode *target = new_dentry->d_inode;
+fs/./namei.c:	old_name = fsnotify_oldname_init(old_dentry->d_name.name);
+fs/./namei.c:			fsnotify_move(new_dir, old_dir, old_dentry->d_name.name,
+fs/./namei.c:	error = vfs_rename(old_path.dentry->d_inode, old_dentry,
+fs/./namei.c:			   new_path.dentry->d_inode, new_dentry,
+fs/./namespace.c:		spin_lock(&dentry->d_lock);
+fs/./namespace.c:		dentry->d_flags &= ~DCACHE_MOUNTED;
+fs/./namespace.c:		spin_unlock(&dentry->d_lock);
+fs/./namespace.c: * The caller may hold dentry->d_inode->i_mutex.
+fs/./namespace.c:	return dentry->d_op == &ns_dentry_operations &&
+fs/./namespace.c:	       dentry->d_fsdata == &mntns_operations;
+fs/./namespace.c:	mnt_ns = to_mnt_ns(get_proc_ns(dentry->d_inode));
+fs/./namespace.c:	inode_lock(dentry->d_inode);
+fs/./namespace.c:		inode_unlock(dentry->d_inode);
+fs/./namespace.c:			inode_unlock(dentry->d_inode);
+fs/./namespace.c:	inode_unlock(path->dentry->d_inode);
+fs/./namespace.c:	inode_unlock(dentry->d_inode);
+fs/./namespace.c:	if (!check_mnt(old) && old_path.dentry->d_op != &ns_dentry_operations)
+fs/./ncpfs/dir.c:		t = NCP_IO_TABLE(dentry->d_sb);
+fs/./ncpfs/dir.c:	pinode = d_inode_rcu(dentry->d_parent);
+fs/./ncpfs/dir.c:	if (dentry == dentry->d_sb->s_root)
+fs/./ncpfs/dir.c:		res = ncp_io2vol(server, __name, &len, dentry->d_name.name,
+fs/./ncpfs/dir.c:				 dentry->d_name.len, 1);
+fs/./ncpfs/dir.c:		res = ncp_io2vol(server, __name, &len, dentry->d_name.name,
+fs/./ncpfs/dir.c:				 dentry->d_name.len, !ncp_preserve_case(dir));
+fs/./ncpfs/dir.c:		dentry->d_parent, __name, res);
+fs/./ncpfs/dir.c:		dentry->d_fsdata = NULL;
+fs/./ncpfs/dir.c:			spin_lock(&dentry->d_lock);
+fs/./ncpfs/dir.c:				spin_unlock(&dentry->d_lock);
+fs/./ncpfs/dir.c:				spin_unlock(&dentry->d_lock);
+fs/./ncpfs/dir.c:			spin_unlock(&dentry->d_lock);
+fs/./ncpfs/dir.c:	spin_lock(&dentry->d_lock);
+fs/./ncpfs/dir.c:	spin_unlock(&dentry->d_lock);
+fs/./ncpfs/dir.c:	if (!dentry->d_fsdata)	/* not referenced from page cache */
+fs/./ncpfs/dir.c:	NCP_FINFO(d_inode(dentry->d_parent))->flags &= ~NCPI_DIR_CACHE;
+fs/./ncpfs/dir.c:			spin_lock(&dentry->d_lock);
+fs/./ncpfs/dir.c:			spin_unlock(&dentry->d_lock);
+fs/./ncpfs/dir.c:		res = ncp_io2vol(server, __name, &len, dentry->d_name.name,
+fs/./ncpfs/dir.c:				 dentry->d_name.len, 1);
+fs/./ncpfs/dir.c:		res = ncp_io2vol(server, __name, &len, dentry->d_name.name,
+fs/./ncpfs/dir.c:				 dentry->d_name.len, !ncp_preserve_case(dir));
+fs/./ncpfs/dir.c:	error = ncp_io2vol(server, __name, &len, dentry->d_name.name,
+fs/./ncpfs/dir.c:			   dentry->d_name.len, !ncp_preserve_case(dir));
+fs/./ncpfs/dir.c:	error = ncp_io2vol(server, __name, &len, dentry->d_name.name,
+fs/./ncpfs/dir.c:			   dentry->d_name.len, !ncp_preserve_case(dir));
+fs/./ncpfs/dir.c:	error = ncp_io2vol(server, __name, &len, dentry->d_name.name,
+fs/./ncpfs/dir.c:			   dentry->d_name.len, !ncp_preserve_case(dir));
+fs/./ncpfs/dir.c:			   old_dentry->d_name.name, old_dentry->d_name.len,
+fs/./ncpfs/dir.c:			   new_dentry->d_name.name, new_dentry->d_name.len,
+fs/./ncpfs/inode.c:	struct super_block *sb = dentry->d_sb;
+fs/./ncpfs/ncplib_kernel.h:	dentry->d_time = jiffies - NCP_MAX_AGE(server);
+fs/./ncpfs/ncplib_kernel.h:	dentry->d_time = jiffies;
+fs/./nfs/dir.c:		if (!nfs_fsid_equal(&NFS_SB(dentry->d_sb)->fsid,
+fs/./nfs/dir.c:	inode = nfs_fhget(dentry->d_sb, entry->fh, entry->fattr, entry->label);
+fs/./nfs/dir.c:	if (!nfs_verify_change_attribute(dir, dentry->d_time))
+fs/./nfs/dir.c:	if (!nfs_verify_change_attribute(dir, dentry->d_time))
+fs/./nfs/dir.c:		parent = ACCESS_ONCE(dentry->d_parent);
+fs/./nfs/dir.c:	error = NFS_PROTO(dir)->lookup(dir, &dentry->d_name, fhandle, fattr, label);
+fs/./nfs/dir.c:		if (parent != ACCESS_ONCE(dentry->d_parent))
+fs/./nfs/dir.c:		dentry, dentry->d_flags);
+fs/./nfs/dir.c:	if (dentry->d_flags & DCACHE_NFSFS_RENAMED) {
+fs/./nfs/dir.c:	if (!(dentry->d_sb->s_flags & MS_ACTIVE)) {
+fs/./nfs/dir.c:	if (dentry->d_flags & DCACHE_NFSFS_RENAMED) {
+fs/./nfs/dir.c:	if (unlikely(dentry->d_fsdata)) {
+fs/./nfs/dir.c:		if (dentry->d_flags & DCACHE_NFSFS_RENAMED)
+fs/./nfs/dir.c:			kfree(dentry->d_fsdata);
+fs/./nfs/dir.c:	if (unlikely(dentry->d_name.len > NFS_SERVER(dir)->namelen))
+fs/./nfs/dir.c:	error = NFS_PROTO(dir)->lookup(dir, &dentry->d_name, fhandle, fattr, label);
+fs/./nfs/dir.c:	inode = nfs_fhget(dentry->d_sb, fhandle, fattr, label);
+fs/./nfs/dir.c:	if (dentry->d_name.len > NFS_SERVER(dir)->namelen)
+fs/./nfs/dir.c:		dentry = d_alloc_parallel(dentry->d_parent,
+fs/./nfs/dir.c:					  &dentry->d_name, &wq);
+fs/./nfs/dir.c:	if (NFS_SB(dentry->d_sb)->caps & NFS_CAP_ATOMIC_OPEN_V1)
+fs/./nfs/dir.c:			parent = ACCESS_ONCE(dentry->d_parent);
+fs/./nfs/dir.c:		else if (parent != ACCESS_ONCE(dentry->d_parent))
+fs/./nfs/dir.c:		error = NFS_PROTO(dir)->lookup(dir, &dentry->d_name, fhandle, fattr, NULL);
+fs/./nfs/dir.c:		struct nfs_server *server = NFS_SB(dentry->d_sb);
+fs/./nfs/dir.c:	inode = nfs_fhget(dentry->d_sb, fhandle, fattr, label);
+fs/./nfs/dir.c:		error = NFS_PROTO(dir)->rmdir(dir, &dentry->d_name);
+fs/./nfs/dir.c:		error = NFS_PROTO(dir)->rmdir(dir, &dentry->d_name);
+fs/./nfs/dir.c:	struct inode *dir = d_inode(dentry->d_parent);
+fs/./nfs/dir.c:	if (dentry->d_flags & DCACHE_NFSFS_RENAMED) {
+fs/./nfs/dir.c:		error = NFS_PROTO(dir)->remove(dir, &dentry->d_name);
+fs/./nfs/dir.c:		error = NFS_PROTO(dir)->remove(dir, &dentry->d_name);
+fs/./nfs/dir.c:	spin_lock(&dentry->d_lock);
+fs/./nfs/dir.c:		spin_unlock(&dentry->d_lock);
+fs/./nfs/dir.c:	spin_unlock(&dentry->d_lock);
+fs/./nfs/dir.c:	error = NFS_PROTO(dir)->link(inode, dir, &dentry->d_name);
+fs/./nfs/dir.c:			dentry = d_alloc(new_dentry->d_parent,
+fs/./nfs/dir.c:					 &new_dentry->d_name);
+fs/./nfs/inode.c:	nfs_sb_active(dentry->d_sb);
+fs/./nfs/inode.c:	struct super_block *sb = ctx->dentry->d_sb;
+fs/./nfs/namespace.c:		spin_lock(&dentry->d_lock);
+fs/./nfs/namespace.c:		namelen = dentry->d_name.len;
+fs/./nfs/namespace.c:		memcpy(end, dentry->d_name.name, namelen);
+fs/./nfs/namespace.c:		spin_unlock(&dentry->d_lock);
+fs/./nfs/namespace.c:		dentry = dentry->d_parent;
+fs/./nfs/namespace.c:		spin_unlock(&dentry->d_lock);
+fs/./nfs/namespace.c:			spin_unlock(&dentry->d_lock);
+fs/./nfs/namespace.c:	base = dentry->d_fsdata;
+fs/./nfs/namespace.c:		spin_unlock(&dentry->d_lock);
+fs/./nfs/namespace.c:		spin_unlock(&dentry->d_lock);
+fs/./nfs/namespace.c:	spin_unlock(&dentry->d_lock);
+fs/./nfs/namespace.c:	spin_unlock(&dentry->d_lock);
+fs/./nfs/namespace.c:		.sb = dentry->d_sb,
+fs/./nfs/namespace.c:		mnt = nfs_do_clone_mount(NFS_SB(dentry->d_sb), devname, &mountdata);
+fs/./nfs/namespace.c:	err = server->nfs_client->rpc_ops->lookup(d_inode(parent), &dentry->d_name, fh, fattr, NULL);
+fs/./nfs/nfs3proc.c:	data->arg.create.name = dentry->d_name.name;
+fs/./nfs/nfs3proc.c:	data->arg.create.len = dentry->d_name.len;
+fs/./nfs/nfs3proc.c:	data->arg.symlink.fromname = dentry->d_name.name;
+fs/./nfs/nfs3proc.c:	data->arg.symlink.fromlen = dentry->d_name.len;
+fs/./nfs/nfs3proc.c:	data->arg.mkdir.name = dentry->d_name.name;
+fs/./nfs/nfs3proc.c:	data->arg.mkdir.len = dentry->d_name.len;
+fs/./nfs/nfs3proc.c:	data->arg.mknod.name = dentry->d_name.name;
+fs/./nfs/nfs3proc.c:	data->arg.mknod.len = dentry->d_name.len;
+fs/./nfs/nfs4namespace.c:		.sb = dentry->d_sb,
+fs/./nfs/nfs4namespace.c:		.authflavor = NFS_SB(dentry->d_sb)->client->cl_auth->au_flavor,
+fs/./nfs/nfs4namespace.c:	err = nfs4_proc_fs_locations(client, d_inode(parent), &dentry->d_name, fs_locations, page);
+fs/./nfs/nfs4namespace.c:	const struct qstr *name = &dentry->d_name;
+fs/./nfs/nfs4proc.c:				&dentry->d_name, (void **)&label->label, &label->len);
+fs/./nfs/nfs4proc.c:	p = xdr_encode_hyper(p, NFS_FILEID(d_inode(dentry->d_parent)));
+fs/./nfs/nfs4proc.c:	nfs_sb_active(dentry->d_sb);
+fs/./nfs/nfs4proc.c:	p->o_arg.name = &dentry->d_name;
+fs/./nfs/nfs4proc.c:	struct super_block *sb = p->dentry->d_sb;
+fs/./nfs/nfs4proc.c:			NFS_SB(opendata->dentry->d_sb),
+fs/./nfs/nfs4proc.c:	nfs4_setup_sequence(NFS_SB(data->dentry->d_sb)->nfs_client,
+fs/./nfs/nfs4proc.c:	data = nfs4_alloc_createdata(dir, &dentry->d_name, sattr, NF4LNK);
+fs/./nfs/nfs4proc.c:		trace_nfs4_symlink(dir, &dentry->d_name, err);
+fs/./nfs/nfs4proc.c:	data = nfs4_alloc_createdata(dir, &dentry->d_name, sattr, NF4DIR);
+fs/./nfs/nfs4proc.c:		trace_nfs4_mkdir(dir, &dentry->d_name, err);
+fs/./nfs/nfs4proc.c:	data = nfs4_alloc_createdata(dir, &dentry->d_name, sattr, NF4SOCK);
+fs/./nfs/nfs4proc.c:		trace_nfs4_mknod(dir, &dentry->d_name, err);
+fs/./nfs/nfs4trace.h:			__string(name, ctx->dentry->d_name.name)
+fs/./nfs/nfs4trace.h:			__entry->dev = ctx->dentry->d_sb->s_dev;
+fs/./nfs/nfs4trace.h:			__entry->dir = NFS_FILEID(d_inode(ctx->dentry->d_parent));
+fs/./nfs/nfs4trace.h:			__assign_str(name, ctx->dentry->d_name.name);
+fs/./nfs/nfstrace.h:			__string(name, dentry->d_name.name)
+fs/./nfs/nfstrace.h:			__assign_str(name, dentry->d_name.name);
+fs/./nfs/nfstrace.h:			__string(name, dentry->d_name.name)
+fs/./nfs/nfstrace.h:			__assign_str(name, dentry->d_name.name);
+fs/./nfs/nfstrace.h:			__string(name, ctx->dentry->d_name.name)
+fs/./nfs/nfstrace.h:			__assign_str(name, ctx->dentry->d_name.name);
+fs/./nfs/nfstrace.h:			__string(name, ctx->dentry->d_name.name)
+fs/./nfs/nfstrace.h:			__assign_str(name, ctx->dentry->d_name.name);
+fs/./nfs/nfstrace.h:			__string(name, dentry->d_name.name)
+fs/./nfs/nfstrace.h:			__assign_str(name, dentry->d_name.name);
+fs/./nfs/nfstrace.h:			__string(name, dentry->d_name.name)
+fs/./nfs/nfstrace.h:			__assign_str(name, dentry->d_name.name);
+fs/./nfs/nfstrace.h:			__string(name, dentry->d_name.name)
+fs/./nfs/nfstrace.h:			__assign_str(name, dentry->d_name.name);
+fs/./nfs/nfstrace.h:			__string(name, dentry->d_name.name)
+fs/./nfs/nfstrace.h:			__assign_str(name, dentry->d_name.name);
+fs/./nfs/nfstrace.h:			__string(name, dentry->d_name.name)
+fs/./nfs/nfstrace.h:			__assign_str(name, dentry->d_name.name);
+fs/./nfs/nfstrace.h:			__string(name, dentry->d_name.name)
+fs/./nfs/nfstrace.h:			__assign_str(name, dentry->d_name.name);
+fs/./nfs/nfstrace.h:			__string(old_name, old_dentry->d_name.name)
+fs/./nfs/nfstrace.h:			__string(new_name, new_dentry->d_name.name)
+fs/./nfs/nfstrace.h:			__assign_str(old_name, old_dentry->d_name.name);
+fs/./nfs/nfstrace.h:			__assign_str(new_name, new_dentry->d_name.name);
+fs/./nfs/nfstrace.h:			__string(old_name, old_dentry->d_name.name)
+fs/./nfs/nfstrace.h:			__string(new_name, new_dentry->d_name.name)
+fs/./nfs/nfstrace.h:			__assign_str(old_name, old_dentry->d_name.name);
+fs/./nfs/nfstrace.h:			__assign_str(new_name, new_dentry->d_name.name);
+fs/./nfs/nfstrace.h:			struct inode *dir = d_inode(data->dentry->d_parent);
+fs/./nfs/proc.c:		data->arg.name = dentry->d_name.name;
+fs/./nfs/proc.c:		data->arg.len = dentry->d_name.len;
+fs/./nfs/proc.c:		.fromname	= dentry->d_name.name,
+fs/./nfs/proc.c:		.fromlen	= dentry->d_name.len,
+fs/./nfs/super.c:	struct nfs_server *server = NFS_SB(dentry->d_sb);
+fs/./nfs/super.c:	buf->f_frsize = dentry->d_sb->s_blocksize;
+fs/./nfs/super.c:	buf->f_bsize = dentry->d_sb->s_blocksize;
+fs/./nfs/super.c:	blockbits = dentry->d_sb->s_blocksize_bits;
+fs/./nfs/write.c:			req->wb_context->dentry->d_sb->s_id,
+fs/./nfs/unlink.c:	struct inode *dir = d_inode(data->dentry->d_parent);
+fs/./nfs/unlink.c:	struct super_block *sb = dentry->d_sb;
+fs/./nfs/unlink.c:	up_read_non_owner(&NFS_I(d_inode(dentry->d_parent))->rmdir_sem);
+fs/./nfs/unlink.c:	struct inode *dir = d_inode(data->dentry->d_parent);
+fs/./nfs/unlink.c:	struct inode *dir = d_inode(data->dentry->d_parent);
+fs/./nfs/unlink.c:	struct inode *dir = d_inode(dentry->d_parent);
+fs/./nfs/unlink.c:	alias = d_alloc_parallel(dentry->d_parent, &data->args.name, &data->wq);
+fs/./nfs/unlink.c:	spin_lock(&dentry->d_lock);
+fs/./nfs/unlink.c:	if (dentry->d_flags & DCACHE_NFSFS_RENAMED)
+fs/./nfs/unlink.c:	dentry->d_flags |= DCACHE_NFSFS_RENAMED;
+fs/./nfs/unlink.c:	devname_garbage = dentry->d_fsdata;
+fs/./nfs/unlink.c:	dentry->d_fsdata = data;
+fs/./nfs/unlink.c:	spin_unlock(&dentry->d_lock);
+fs/./nfs/unlink.c:	spin_unlock(&dentry->d_lock);
+fs/./nfs/unlink.c:	spin_lock(&dentry->d_lock);
+fs/./nfs/unlink.c:	dentry->d_flags &= ~DCACHE_NFSFS_RENAMED;
+fs/./nfs/unlink.c:	data = dentry->d_fsdata;
+fs/./nfs/unlink.c:	dentry->d_fsdata = NULL;
+fs/./nfs/unlink.c:	spin_unlock(&dentry->d_lock);
+fs/./nfs/unlink.c:	spin_lock(&dentry->d_lock);
+fs/./nfs/unlink.c:	if (dentry->d_flags & DCACHE_NFSFS_RENAMED) {
+fs/./nfs/unlink.c:		struct nfs_unlinkdata *data = dentry->d_fsdata;
+fs/./nfs/unlink.c:		dentry->d_flags &= ~DCACHE_NFSFS_RENAMED;
+fs/./nfs/unlink.c:		dentry->d_fsdata = NULL;
+fs/./nfs/unlink.c:		spin_unlock(&dentry->d_lock);
+fs/./nfs/unlink.c:	spin_unlock(&dentry->d_lock);
+fs/./nfs/unlink.c:	data->args.old_name = &old_dentry->d_name;
+fs/./nfs/unlink.c:	data->args.new_name = &new_dentry->d_name;
+fs/./nfs/unlink.c:	if (dentry->d_flags & DCACHE_NFSFS_RENAMED)
+fs/./nfs/unlink.c:		sdentry = lookup_one_len(silly, dentry->d_parent, slen);
+fs/./nfs/unlink.c:	error = nfs_async_unlink(dentry, &sdentry->d_name);
+fs/./nfsd/nfs3proc.c:		struct super_block *sb = argp->fh.fh_dentry->d_sb;
+fs/./nfsd/nfs3proc.c:		struct super_block *sb = argp->fh.fh_dentry->d_sb;
+fs/./nfsd/nfs3xdr.c:				     (fhp->fh_dentry->d_sb->s_dev));
+fs/./nfsd/nfs4xdr.c:		spin_lock(&dentry->d_lock);
+fs/./nfsd/nfs4xdr.c:		len = dentry->d_name.len;
+fs/./nfsd/nfs4xdr.c:			spin_unlock(&dentry->d_lock);
+fs/./nfsd/nfs4xdr.c:		p = xdr_encode_opaque(p, dentry->d_name.name, len);
+fs/./nfsd/nfs4xdr.c:		spin_unlock(&dentry->d_lock);
+fs/./nfsd/nfs4xdr.c:		if (!IS_POSIXACL(dentry->d_inode))
+fs/./nfsd/nfs4xdr.c:		*p++ = cpu_to_be32(IS_POSIXACL(dentry->d_inode) ?
+fs/./nfsd/nfsctl.c:	error = nlmsvc_unlock_all_by_sb(path.dentry->d_sb);
+fs/./nfsd/nfsfh.c:			(dentry->d_flags & DCACHE_DISCONNECTED)) {
+fs/./nfsd/nfsfh.c:	return exp->ex_path.dentry == exp->ex_path.dentry->d_sb->s_root;
+fs/./nfsd/nfsfh.c:	return exp->ex_path.dentry->d_sb;
+fs/./nilfs2/dir.c:	struct inode *dir = d_inode(dentry->d_parent);
+fs/./nilfs2/dir.c:	const unsigned char *name = dentry->d_name.name;
+fs/./nilfs2/dir.c:	int namelen = dentry->d_name.len;
+fs/./nilfs2/namei.c:	if (dentry->d_name.len > NILFS_NAME_LEN)
+fs/./nilfs2/namei.c:	ino = nilfs_inode_by_name(dir, &dentry->d_name);
+fs/./nilfs2/namei.c:	de = nilfs_find_entry(dir, &dentry->d_name, &page);
+fs/./nilfs2/namei.c:	old_de = nilfs_find_entry(old_dir, &old_dentry->d_name, &old_page);
+fs/./nilfs2/namei.c:		new_de = nilfs_find_entry(new_dir, &new_dentry->d_name, &new_page);
+fs/./nilfs2/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./nilfs2/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./notify/fanotify/fanotify_user.c:	ret = inode_permission(path->dentry->d_inode, MAY_READ);
+fs/./notify/fanotify/fanotify_user.c:		inode = path.dentry->d_inode;
+fs/./notify/fsnotify.c:	if (!(dentry->d_flags & DCACHE_FSNOTIFY_PARENT_WATCHED))
+fs/./notify/fsnotify.c:				       dentry->d_name.name, 0);
+fs/./notify/fsnotify.c:			ret = fsnotify(p_inode, mask, dentry->d_inode, FSNOTIFY_EVENT_INODE,
+fs/./notify/fsnotify.c:				       dentry->d_name.name, 0);
+fs/./notify/fsnotify.h: * update the dentry->d_flags of all of inode's children to indicate if inode cares
+fs/./notify/mark.c:	PDEBUG("Entered %s dentry name %s\n", __func__, dentry->d_name.name);
+fs/./notify/mark.c:	PDEBUG("Exited %s dentry name %s\n", __func__, dentry->d_name.name);
+fs/./notify/mark.c:		PDEBUG("given file name:%s dentry file name:%s\n", file_name, i_dentry->d_name.name);
+fs/./notify/mark.c:		PDEBUG("given file name:%s dentry file name:%s\n", file_name, i_dentry->d_name.name);
+fs/./notify/inotify/inotify_user.c:	error = inode_permission(path->dentry->d_inode, MAY_READ);
+fs/./notify/inotify/inotify_user.c:	inode = path.dentry->d_inode;
+fs/./nsfs.c:	const struct proc_ns_operations *ns_ops = dentry->d_fsdata;
+fs/./nsfs.c:	if (!lockref_get_not_dead(&dentry->d_lockref))
+fs/./nsfs.c:	dentry->d_flags |= DCACHE_RCUACCESS;
+fs/./nsfs.c:	dentry->d_fsdata = (void *)ns->ops;
+fs/./nsfs.c:	const struct proc_ns_operations *ns_ops = dentry->d_fsdata;
+fs/./ntfs/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./ocfs2/dcache.c:		OCFS2_I(d_inode(dentry->d_parent))->ip_dir_lock_gen;
+fs/./ocfs2/dcache.c:	dentry->d_fsdata = (void *)gen;
+fs/./ocfs2/dcache.c:	osb = OCFS2_SB(dentry->d_sb);
+fs/./ocfs2/dcache.c:	trace_ocfs2_dentry_revalidate(dentry, dentry->d_name.len,
+fs/./ocfs2/dcache.c:				      dentry->d_name.name);
+fs/./ocfs2/dcache.c:		unsigned long gen = (unsigned long) dentry->d_fsdata;
+fs/./ocfs2/dcache.c:		spin_lock(&dentry->d_lock);
+fs/./ocfs2/dcache.c:		pgen = OCFS2_I(d_inode(dentry->d_parent))->ip_dir_lock_gen;
+fs/./ocfs2/dcache.c:		spin_unlock(&dentry->d_lock);
+fs/./ocfs2/dcache.c:		trace_ocfs2_dentry_revalidate_negative(dentry->d_name.len,
+fs/./ocfs2/dcache.c:						       dentry->d_name.name,
+fs/./ocfs2/dcache.c:	if (!dentry->d_fsdata) {
+fs/./ocfs2/dcache.c:	if (!dentry->d_fsdata)
+fs/./ocfs2/dcache.c:	if (!dentry->d_parent)
+fs/./ocfs2/dcache.c:	parent = d_inode(dentry->d_parent);
+fs/./ocfs2/dcache.c:		spin_lock(&dentry->d_lock);
+fs/./ocfs2/dcache.c:			trace_ocfs2_find_local_alias(dentry->d_name.len,
+fs/./ocfs2/dcache.c:						     dentry->d_name.name);
+fs/./ocfs2/dcache.c:			spin_unlock(&dentry->d_lock);
+fs/./ocfs2/dcache.c:		spin_unlock(&dentry->d_lock);
+fs/./ocfs2/dcache.c:	struct ocfs2_dentry_lock *dl = dentry->d_fsdata;
+fs/./ocfs2/dcache.c:	trace_ocfs2_dentry_attach_lock(dentry->d_name.len, dentry->d_name.name,
+fs/./ocfs2/dcache.c:	if (d_really_is_negative(dentry) && dentry->d_fsdata) {
+fs/./ocfs2/dcache.c:		   Clear dentry->d_fsdata */
+fs/./ocfs2/dcache.c:		dentry->d_fsdata = dl = NULL;
+fs/./ocfs2/dcache.c:	dentry->d_fsdata = dl;
+fs/./ocfs2/dcache.c:		dentry->d_fsdata = NULL;
+fs/./ocfs2/dcache.c:	struct ocfs2_dentry_lock *dl = dentry->d_fsdata;
+fs/./ocfs2/dcache.c:		if (!(dentry->d_flags & DCACHE_DISCONNECTED) &&
+fs/./ocfs2/dcache.c:			     ino, dentry->d_flags, dentry);
+fs/./ocfs2/dcache.c:	ocfs2_dentry_lock_put(OCFS2_SB(dentry->d_sb), dl);
+fs/./ocfs2/dcache.c:	ocfs2_dentry_lock_put(osb, dentry->d_fsdata);
+fs/./ocfs2/dcache.c:	dentry->d_fsdata = NULL;
+fs/./ocfs2/dir.h:	return __ocfs2_add_entry(handle, d_inode(dentry->d_parent),
+fs/./ocfs2/dir.h:				 dentry->d_name.name, dentry->d_name.len,
+fs/./ocfs2/dlmfs/dlmfs.c:	const struct qstr *domain = &dentry->d_name;
+fs/./ocfs2/dlmfs/dlmfs.c:	const struct qstr *name = &dentry->d_name;
+fs/./ocfs2/dlmfs/userdlm.c:	BUG_ON(dentry->d_name.len >= USER_DLM_LOCK_ID_MAX_LEN);
+fs/./ocfs2/dlmfs/userdlm.c:	       dentry->d_name.name,
+fs/./ocfs2/dlmfs/userdlm.c:	       dentry->d_name.len);
+fs/./ocfs2/dlmfs/userdlm.c:	lockres->l_namelen = dentry->d_name.len;
+fs/./ocfs2/dlmglue.c:	struct ocfs2_dentry_lock *dl = dentry->d_fsdata;
+fs/./ocfs2/dlmglue.c:	struct ocfs2_super *osb = OCFS2_SB(dentry->d_sb);
+fs/./ocfs2/dlmglue.c:	struct ocfs2_dentry_lock *dl = dentry->d_fsdata;
+fs/./ocfs2/dlmglue.c:	struct ocfs2_super *osb = OCFS2_SB(dentry->d_sb);
+fs/./ocfs2/export.c:	trace_ocfs2_encode_fh_begin(dentry, dentry->d_name.len,
+fs/./ocfs2/export.c:				    dentry->d_name.name,
+fs/./ocfs2/file.c:			      file->f_path.dentry->d_name.len,
+fs/./ocfs2/file.c:			      file->f_path.dentry->d_name.name, mode);
+fs/./ocfs2/file.c:				 file->f_path.dentry->d_name.len,
+fs/./ocfs2/file.c:				 file->f_path.dentry->d_name.name,
+fs/./ocfs2/file.c:			      file->f_path.dentry->d_name.len,
+fs/./ocfs2/file.c:			      file->f_path.dentry->d_name.name,
+fs/./ocfs2/file.c:			    dentry->d_name.len, dentry->d_name.name,
+fs/./ocfs2/file.c:	struct super_block *sb = path->dentry->d_sb;
+fs/./ocfs2/file.c:		file->f_path.dentry->d_name.len,
+fs/./ocfs2/file.c:		file->f_path.dentry->d_name.name,
+fs/./ocfs2/file.c:			filp->f_path.dentry->d_name.len,
+fs/./ocfs2/file.c:			filp->f_path.dentry->d_name.name,
+fs/./ocfs2/namei.c:	trace_ocfs2_lookup(dir, dentry, dentry->d_name.len,
+fs/./ocfs2/namei.c:			   dentry->d_name.name,
+fs/./ocfs2/namei.c:	if (dentry->d_name.len > OCFS2_MAX_FILENAME_LEN) {
+fs/./ocfs2/namei.c:	status = ocfs2_lookup_ino_from_name(dir, dentry->d_name.name,
+fs/./ocfs2/namei.c:					    dentry->d_name.len, &blkno);
+fs/./ocfs2/namei.c:	struct ocfs2_dentry_lock *dl = dentry->d_fsdata;
+fs/./ocfs2/namei.c:	dentry->d_fsdata = NULL;
+fs/./ocfs2/namei.c:	trace_ocfs2_mknod(dir, dentry, dentry->d_name.len, dentry->d_name.name,
+fs/./ocfs2/namei.c:	status = ocfs2_check_dir_for_entry(dir, dentry->d_name.name,
+fs/./ocfs2/namei.c:					   dentry->d_name.len);
+fs/./ocfs2/namei.c:					      dentry->d_name.name,
+fs/./ocfs2/namei.c:					      dentry->d_name.len, &lookup);
+fs/./ocfs2/namei.c:	status = ocfs2_init_security_get(inode, dir, &dentry->d_name, &si);
+fs/./ocfs2/namei.c:	dl = dentry->d_fsdata;
+fs/./ocfs2/namei.c:	trace_ocfs2_mkdir(dir, dentry, dentry->d_name.len, dentry->d_name.name,
+fs/./ocfs2/namei.c:	trace_ocfs2_create(dir, dentry, dentry->d_name.len, dentry->d_name.name,
+fs/./ocfs2/namei.c:	struct inode *old_dir = d_inode(old_dentry->d_parent);
+fs/./ocfs2/namei.c:			 old_dentry->d_name.len, old_dentry->d_name.name,
+fs/./ocfs2/namei.c:			 dentry->d_name.len, dentry->d_name.name);
+fs/./ocfs2/namei.c:	err = ocfs2_lookup_ino_from_name(old_dir, old_dentry->d_name.name,
+fs/./ocfs2/namei.c:			old_dentry->d_name.len, &old_de_ino);
+fs/./ocfs2/namei.c:	err = ocfs2_check_dir_for_entry(dir, dentry->d_name.name,
+fs/./ocfs2/namei.c:					dentry->d_name.len);
+fs/./ocfs2/namei.c:					   dentry->d_name.name,
+fs/./ocfs2/namei.c:					   dentry->d_name.len, &lookup);
+fs/./ocfs2/namei.c:	trace_ocfs2_unlink(dir, dentry, dentry->d_name.len,
+fs/./ocfs2/namei.c:			   dentry->d_name.name,
+fs/./ocfs2/namei.c:	BUG_ON(d_inode(dentry->d_parent) != dir);
+fs/./ocfs2/namei.c:	status = ocfs2_find_files_on_disk(dentry->d_name.name,
+fs/./ocfs2/namei.c:					  dentry->d_name.len, &blkno, dir,
+fs/./ocfs2/namei.c:			   old_dentry->d_name.len, old_dentry->d_name.name,
+fs/./ocfs2/namei.c:			   new_dentry->d_name.len, new_dentry->d_name.name);
+fs/./ocfs2/namei.c:	status = ocfs2_lookup_ino_from_name(old_dir, old_dentry->d_name.name,
+fs/./ocfs2/namei.c:					    old_dentry->d_name.len,
+fs/./ocfs2/namei.c:	status = ocfs2_find_files_on_disk(new_dentry->d_name.name,
+fs/./ocfs2/namei.c:					  new_dentry->d_name.len,
+fs/./ocfs2/namei.c:			trace_ocfs2_rename_target_exists(new_dentry->d_name.len,
+fs/./ocfs2/namei.c:						new_dentry->d_name.name);
+fs/./ocfs2/namei.c:		BUG_ON(d_inode(new_dentry->d_parent) != new_dir);
+fs/./ocfs2/namei.c:						   new_dentry->d_name.name,
+fs/./ocfs2/namei.c:						   new_dentry->d_name.len);
+fs/./ocfs2/namei.c:						      new_dentry->d_name.name,
+fs/./ocfs2/namei.c:						      new_dentry->d_name.len,
+fs/./ocfs2/namei.c:	status = ocfs2_find_entry(old_dentry->d_name.name,
+fs/./ocfs2/namei.c:				  old_dentry->d_name.len, old_dir,
+fs/./ocfs2/namei.c:					new_dentry->d_name.len, new_dentry->d_name.name,
+fs/./ocfs2/namei.c:					old_dentry->d_name.len, old_dentry->d_name.name);
+fs/./ocfs2/namei.c:					new_dentry->d_name.len, new_dentry->d_name.name,
+fs/./ocfs2/namei.c:					old_dentry->d_name.len, old_dentry->d_name.name);
+fs/./ocfs2/namei.c:				  dentry->d_name.len, dentry->d_name.name);
+fs/./ocfs2/namei.c:	status = ocfs2_check_dir_for_entry(dir, dentry->d_name.name,
+fs/./ocfs2/namei.c:					   dentry->d_name.len);
+fs/./ocfs2/namei.c:					      dentry->d_name.name,
+fs/./ocfs2/namei.c:					      dentry->d_name.len, &lookup);
+fs/./ocfs2/namei.c:	status = ocfs2_init_security_get(inode, dir, &dentry->d_name, &si);
+fs/./ocfs2/namei.c:	trace_ocfs2_symlink_create(dir, dentry, dentry->d_name.len,
+fs/./ocfs2/namei.c:				   dentry->d_name.name,
+fs/./ocfs2/namei.c:	dl = dentry->d_fsdata;
+fs/./ocfs2/namei.c:				dentry->d_name.len, dentry->d_name.name,
+fs/./ocfs2/namei.c:	status = ocfs2_check_dir_for_entry(dir, dentry->d_name.name,
+fs/./ocfs2/namei.c:					   dentry->d_name.len);
+fs/./ocfs2/namei.c:					      dentry->d_name.name,
+fs/./ocfs2/namei.c:					      dentry->d_name.len, &lookup);
+fs/./ocfs2/refcounttree.c:						    &new_dentry->d_name);
+fs/./ocfs2/super.c:	trace_ocfs2_statfs(dentry->d_sb, buf);
+fs/./ocfs2/super.c:	osb = OCFS2_SB(dentry->d_sb);
+fs/./ocfs2/super.c:	buf->f_bsize = dentry->d_sb->s_blocksize;
+fs/./ocfs2/xattr.c:	if (!ocfs2_supports_xattr(OCFS2_SB(dentry->d_sb)))
+fs/./omfs/dir.c:	struct inode *dir = d_inode(dentry->d_parent);
+fs/./omfs/dir.c:	const char *name = dentry->d_name.name;
+fs/./omfs/dir.c:	int namelen = dentry->d_name.len;
+fs/./omfs/dir.c:	struct inode *dir = d_inode(dentry->d_parent);
+fs/./omfs/dir.c:	const char *name = dentry->d_name.name;
+fs/./omfs/dir.c:	int namelen = dentry->d_name.len;
+fs/./omfs/dir.c:	if (dentry->d_name.len > OMFS_NAMELEN)
+fs/./omfs/dir.c:	bh = omfs_find_entry(dir, dentry->d_name.name, dentry->d_name.len);
+fs/./omfs/inode.c:	struct super_block *s = dentry->d_sb;
+fs/./open.c:	inode_lock(dentry->d_inode);
+fs/./open.c:	inode_unlock(dentry->d_inode);
+fs/./open.c:	inode = path->dentry->d_inode;
+fs/./open.c:	error = get_write_access(upperdentry->d_inode);
+fs/./open.c:	put_write_access(upperdentry->d_inode);
+fs/./open.c:	inode = dentry->d_inode;
+fs/./open.c:	error = inode_permission(path.dentry->d_inode, MAY_EXEC | MAY_CHDIR);
+fs/./open.c:	error = inode_permission(path.dentry->d_inode, MAY_EXEC | MAY_CHDIR);
+fs/./open.c:	struct inode *inode = path->dentry->d_inode;
+fs/./open.c:	struct inode *inode = path->dentry->d_inode;
+fs/./openpromfs/inode.c:	name = dentry->d_name.name;
+fs/./openpromfs/inode.c:	len = dentry->d_name.len;
+fs/./orangefs/dcache.c:	struct inode *parent_inode = parent_dentry->d_inode;
+fs/./orangefs/dcache.c:	struct inode *inode = dentry->d_inode;
+fs/./orangefs/dcache.c:		dentry->d_name.name,
+fs/./orangefs/dcache.c:	unsigned long time = (unsigned long) dentry->d_fsdata;
+fs/./orangefs/dcache.c:	if (dentry->d_inode && is_root_handle(dentry->d_inode))
+fs/./orangefs/dcache.c:	if (!dentry->d_inode)
+fs/./orangefs/dcache.c:	ret = orangefs_inode_check_changed(dentry->d_inode);
+fs/./orangefs/dir.c:	    get_interruptible_flag(dentry->d_inode));
+fs/./orangefs/dir.c:	oi = ORANGEFS_I(dentry->d_inode);
+fs/./orangefs/file.c:			(char *)file->f_path.dentry->d_name.name :
+fs/./orangefs/inode.c:	struct inode *inode = dentry->d_inode;
+fs/./orangefs/inode.c:	struct inode *inode = path->dentry->d_inode;
+fs/./orangefs/namei.c:		dentry->d_name.name, ORANGEFS_NAME_MAX);
+fs/./orangefs/namei.c: * Attempt to resolve an object name (dentry->d_name), parent handle, and
+fs/./orangefs/namei.c:	if (dentry->d_name.len > (ORANGEFS_NAME_MAX - 1))
+fs/./orangefs/namei.c:	strncpy(new_op->upcall.req.lookup.d_name, dentry->d_name.name,
+fs/./orangefs/namei.c:	struct inode *inode = dentry->d_inode;
+fs/./orangefs/namei.c:	strncpy(new_op->upcall.req.remove.d_name, dentry->d_name.name,
+fs/./orangefs/namei.c:		dentry->d_name.name,
+fs/./orangefs/namei.c:		dentry->d_name.name, ORANGEFS_NAME_MAX);
+fs/./orangefs/namei.c:	ORANGEFS_I(new_dentry->d_parent->d_inode)->getattr_time = jiffies - 1;
+fs/./orangefs/namei.c:		old_dentry->d_name.name,
+fs/./orangefs/namei.c:		new_dentry->d_name.name,
+fs/./orangefs/namei.c:				get_interruptible_flag(old_dentry->d_inode));
+fs/./orangefs/namei.c:	if (new_dentry->d_inode)
+fs/./orangefs/namei.c:		new_dentry->d_inode->i_ctime = current_time(new_dentry->d_inode);
+fs/./orangefs/orangefs-debugfs.c:	if (!strcmp(file->f_path.dentry->d_name.name,
+fs/./orangefs/orangefs-kernel.h:	return get_ino_from_khandle(dentry->d_parent->d_inode);
+fs/./orangefs/orangefs-kernel.h:	dentry->d_fsdata = (void *) time;
+fs/./orangefs/super.c:	sb = dentry->d_sb;
+fs/./orangefs/xattr.c:	struct inode *inode = dentry->d_inode;
+fs/./overlayfs/copy_up.c:	upper = lookup_one_len(dentry->d_name.name, upperdir,
+fs/./overlayfs/copy_up.c:			       dentry->d_name.len);
+fs/./overlayfs/copy_up.c:	struct ovl_fs *ofs = dentry->d_sb->s_fs_info;
+fs/./overlayfs/copy_up.c:	const struct cred *old_cred = ovl_override_creds(dentry->d_sb);
+fs/./overlayfs/dir.c:	if (newdentry->d_inode)
+fs/./overlayfs/dir.c:	if (!err && WARN_ON(!newdentry->d_inode)) {
+fs/./overlayfs/dir.c:	ovl_dentry_version_inc(dentry->d_parent);
+fs/./overlayfs/dir.c:		ovl_copyattr(newdentry->d_inode, inode);
+fs/./overlayfs/dir.c:	struct dentry *upperdir = ovl_dentry_upper(dentry->d_parent);
+fs/./overlayfs/dir.c:	newdentry = lookup_one_len(dentry->d_name.name, upperdir,
+fs/./overlayfs/dir.c:				   dentry->d_name.len);
+fs/./overlayfs/dir.c:	if (ovl_type_merge(dentry->d_parent) && d_is_dir(newdentry)) {
+fs/./overlayfs/dir.c:	struct dentry *upperdir = ovl_dentry_upper(dentry->d_parent);
+fs/./overlayfs/dir.c:	struct dentry *upperdir = ovl_dentry_upper(dentry->d_parent);
+fs/./overlayfs/dir.c:		err = posix_acl_create(dentry->d_parent->d_inode,
+fs/./overlayfs/dir.c:	upper = lookup_one_len(dentry->d_name.name, upperdir,
+fs/./overlayfs/dir.c:			       dentry->d_name.len);
+fs/./overlayfs/dir.c:	    newdentry->d_inode->i_mode != cattr->mode) {
+fs/./overlayfs/dir.c:		inode_lock(newdentry->d_inode);
+fs/./overlayfs/dir.c:		inode_unlock(newdentry->d_inode);
+fs/./overlayfs/dir.c:	err = ovl_copy_up(dentry->d_parent);
+fs/./overlayfs/dir.c:	old_cred = ovl_override_creds(dentry->d_sb);
+fs/./overlayfs/dir.c:					attr->mode, &dentry->d_name, old_cred,
+fs/./overlayfs/dir.c:	inode = ovl_new_inode(dentry->d_sb, mode, rdev);
+fs/./overlayfs/dir.c:	inode_init_owner(inode, dentry->d_parent->d_inode, mode);
+fs/./overlayfs/dir.c:	struct dentry *upperdir = ovl_dentry_upper(dentry->d_parent);
+fs/./overlayfs/dir.c:	upper = lookup_one_len(dentry->d_name.name, upperdir,
+fs/./overlayfs/dir.c:			       dentry->d_name.len);
+fs/./overlayfs/dir.c:	ovl_dentry_version_inc(dentry->d_parent);
+fs/./overlayfs/dir.c:	struct dentry *upperdir = ovl_dentry_upper(dentry->d_parent);
+fs/./overlayfs/dir.c:	upper = lookup_one_len(dentry->d_name.name, upperdir,
+fs/./overlayfs/dir.c:			       dentry->d_name.len);
+fs/./overlayfs/dir.c:	ovl_dentry_version_inc(dentry->d_parent);
+fs/./overlayfs/dir.c:	err = ovl_copy_up(dentry->d_parent);
+fs/./overlayfs/dir.c:	old_cred = ovl_override_creds(dentry->d_sb);
+fs/./overlayfs/dir.c:			clear_nlink(dentry->d_inode);
+fs/./overlayfs/dir.c:			drop_nlink(dentry->d_inode);
+fs/./overlayfs/dir.c:	return ovl_redirect_dir(dentry->d_sb) ||
+fs/./overlayfs/dir.c:		ret = kstrndup(dentry->d_name.name, dentry->d_name.len,
+fs/./overlayfs/dir.c:		spin_lock(&dentry->d_lock);
+fs/./overlayfs/dir.c:		spin_unlock(&dentry->d_lock);
+fs/./overlayfs/dir.c:	if (WARN_ON(olddentry->d_inode == newdentry->d_inode))
+fs/./overlayfs/inode.c:		inode_lock(upperdentry->d_inode);
+fs/./overlayfs/inode.c:		old_cred = ovl_override_creds(dentry->d_sb);
+fs/./overlayfs/inode.c:			ovl_copyattr(upperdentry->d_inode, dentry->d_inode);
+fs/./overlayfs/inode.c:		inode_unlock(upperdentry->d_inode);
+fs/./overlayfs/inode.c:	bool is_dir = S_ISDIR(dentry->d_inode->i_mode);
+fs/./overlayfs/inode.c:	old_cred = ovl_override_creds(dentry->d_sb);
+fs/./overlayfs/inode.c:	if (ovl_same_sb(dentry->d_sb)) {
+fs/./overlayfs/inode.c:		stat->dev = dentry->d_sb->s_dev;
+fs/./overlayfs/inode.c:		stat->dev = dentry->d_sb->s_dev;
+fs/./overlayfs/inode.c:		stat->ino = dentry->d_inode->i_ino;
+fs/./overlayfs/inode.c:	old_cred = ovl_override_creds(dentry->d_sb);
+fs/./overlayfs/inode.c:	old_cred = ovl_override_creds(dentry->d_sb);
+fs/./overlayfs/inode.c:	old_cred = ovl_override_creds(dentry->d_sb);
+fs/./overlayfs/inode.c:	old_cred = ovl_override_creds(dentry->d_sb);
+fs/./overlayfs/inode.c:	if (special_file(realdentry->d_inode->i_mode))
+fs/./overlayfs/namei.c:	struct super_block *same_sb = ovl_same_sb(dentry->d_sb);
+fs/./overlayfs/namei.c:	struct ovl_entry *roe = dentry->d_sb->s_root->d_fsdata;
+fs/./overlayfs/namei.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/namei.c:	struct ovl_fs *ofs = dentry->d_sb->s_fs_info;
+fs/./overlayfs/namei.c:	struct ovl_entry *poe = dentry->d_parent->d_fsdata;
+fs/./overlayfs/namei.c:	struct ovl_entry *roe = dentry->d_sb->s_root->d_fsdata;
+fs/./overlayfs/namei.c:		.name = dentry->d_name,
+fs/./overlayfs/namei.c:	if (dentry->d_name.len > ofs->namelen)
+fs/./overlayfs/namei.c:	old_cred = ovl_override_creds(dentry->d_sb);
+fs/./overlayfs/namei.c:			inode = ovl_get_inode(dentry->d_sb, realinode);
+fs/./overlayfs/namei.c:			inode = ovl_new_inode(dentry->d_sb, realinode->i_mode,
+fs/./overlayfs/namei.c:		ovl_copyattr(realdentry->d_inode, inode);
+fs/./overlayfs/namei.c:	dentry->d_fsdata = oe;
+fs/./overlayfs/namei.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/namei.c:	struct ovl_entry *poe = dentry->d_parent->d_fsdata;
+fs/./overlayfs/namei.c:	const struct qstr *name = &dentry->d_name;
+fs/./overlayfs/namei.c:	if (!dentry->d_inode)
+fs/./overlayfs/readdir.c:	old_cred = ovl_override_creds(rdd->dentry->d_sb);
+fs/./overlayfs/readdir.c:		if (dentry->d_inode)
+fs/./overlayfs/readdir.c:	struct inode *dir = path->dentry->d_inode;
+fs/./overlayfs/readdir.c:		if (dentry->d_inode)
+fs/./overlayfs/super.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/super.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/super.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/super.c:	struct ovl_fs *ofs = dentry->d_sb->s_fs_info;
+fs/./overlayfs/super.c:	struct dentry *root_dentry = dentry->d_sb->s_root;
+fs/./overlayfs/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./overlayfs/super.c:	struct inode *dir = dentry->d_inode;
+fs/./overlayfs/super.c:	root_dentry->d_fsdata = oe;
+fs/./overlayfs/util.c:	struct ovl_fs *ofs = dentry->d_sb->s_fs_info;
+fs/./overlayfs/util.c:	struct ovl_fs *ofs = dentry->d_sb->s_fs_info;
+fs/./overlayfs/util.c:	struct ovl_fs *ofs = dentry->d_sb->s_fs_info;
+fs/./overlayfs/util.c:	return dentry->d_flags &
+fs/./overlayfs/util.c:	return dentry->d_flags & (DCACHE_NEED_AUTOMOUNT |
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	struct ovl_fs *ofs = dentry->d_sb->s_fs_info;
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	return !dentry->d_inode && ovl_dentry_is_opaque(dentry);
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	WARN_ON(!inode_is_locked(upperdentry->d_parent->d_inode));
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	WARN_ON(!inode_is_locked(dentry->d_inode));
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	WARN_ON(!inode_is_locked(dentry->d_inode));
+fs/./overlayfs/util.c:	struct inode *inode = dentry->d_inode;
+fs/./overlayfs/util.c:	struct ovl_fs *ofs = dentry->d_sb->s_fs_info;
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	struct ovl_fs *ofs = dentry->d_sb->s_fs_info;
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./overlayfs/util.c:	struct ovl_fs *ofs = dentry->d_sb->s_fs_info;
+fs/./overlayfs/util.c:	struct ovl_entry *oe = dentry->d_fsdata;
+fs/./proc/base.c:	struct pid_namespace *pid = path->dentry->d_sb->s_fs_info;
+fs/./proc/base.c:	if (sscanf(dentry->d_name.name, "%lx-%lx", start, end) != 2)
+fs/./proc/base.c:		if (p->len != dentry->d_name.len)
+fs/./proc/base.c:		if (!memcmp(dentry->d_name.name, p->name, p->len))
+fs/./proc/base.c:				      (char*)file->f_path.dentry->d_name.name,
+fs/./proc/base.c:	length = security_setprocattr(file->f_path.dentry->d_name.name,
+fs/./proc/base.c:	tgid = name_to_int(&dentry->d_name);
+fs/./proc/base.c:	ns = dentry->d_sb->s_fs_info;
+fs/./proc/base.c:	tid = name_to_int(&dentry->d_name);
+fs/./proc/base.c:	ns = dentry->d_sb->s_fs_info;
+fs/./proc/fd.c:	unsigned fd = name_to_int(&dentry->d_name);
+fs/./proc/generic.c:	de = pde_subdir_find(de, dentry->d_name.name, dentry->d_name.len);
+fs/./proc/namespaces.c:	unsigned int len = dentry->d_name.len;
+fs/./proc/namespaces.c:		if (!memcmp(dentry->d_name.name, (*entry)->name, len))
+fs/./proc/proc_sysctl.c:	const struct qstr *name = &dentry->d_name;
+fs/./proc_namespace.c:	struct super_block *sb = mnt_path.dentry->d_sb;
+fs/./proc_namespace.c:	struct super_block *sb = mnt_path.dentry->d_sb;
+fs/./qnx4/inode.c:	struct super_block *sb = dentry->d_sb;
+fs/./qnx4/namei.c:	const char *name = dentry->d_name.name;
+fs/./qnx4/namei.c:	int len = dentry->d_name.len;
+fs/./qnx6/inode.c:	struct super_block *sb = dentry->d_sb;
+fs/./qnx6/namei.c:	const char *name = dentry->d_name.name;
+fs/./qnx6/namei.c:	int len = dentry->d_name.len;
+fs/./quota/dquot.c:	if (path->dentry->d_sb != sb)
+fs/./reiserfs/namei.c:	if (REISERFS_MAX_NAME(dir->i_sb->s_blocksize) < dentry->d_name.len)
+fs/./reiserfs/namei.c:	    reiserfs_find_entry(dir, dentry->d_name.name, dentry->d_name.len,
+fs/./reiserfs/namei.c:	retval = reiserfs_security_init(dir, inode, &dentry->d_name, &security);
+fs/./reiserfs/namei.c:	    reiserfs_add_entry(&th, dir, dentry->d_name.name,
+fs/./reiserfs/namei.c:			       dentry->d_name.len, inode, 1 /*visible */ );
+fs/./reiserfs/namei.c:	retval = reiserfs_security_init(dir, inode, &dentry->d_name, &security);
+fs/./reiserfs/namei.c:	    reiserfs_add_entry(&th, dir, dentry->d_name.name,
+fs/./reiserfs/namei.c:			       dentry->d_name.len, inode, 1 /*visible */ );
+fs/./reiserfs/namei.c:	retval = reiserfs_security_init(dir, inode, &dentry->d_name, &security);
+fs/./reiserfs/namei.c:	    reiserfs_add_entry(&th, dir, dentry->d_name.name,
+fs/./reiserfs/namei.c:			       dentry->d_name.len, inode, 1 /*visible */ );
+fs/./reiserfs/namei.c:	     reiserfs_find_entry(dir, dentry->d_name.name, dentry->d_name.len,
+fs/./reiserfs/namei.c:	     reiserfs_find_entry(dir, dentry->d_name.name, dentry->d_name.len,
+fs/./reiserfs/namei.c:	retval = reiserfs_security_init(parent_dir, inode, &dentry->d_name,
+fs/./reiserfs/namei.c:	retval = reiserfs_add_entry(&th, parent_dir, dentry->d_name.name,
+fs/./reiserfs/namei.c:				    dentry->d_name.len, inode, 1 /*visible */ );
+fs/./reiserfs/namei.c:	    reiserfs_add_entry(&th, dir, dentry->d_name.name,
+fs/./reiserfs/namei.c:			       dentry->d_name.len, inode, 1 /*visible */ );
+fs/./reiserfs/namei.c:	    reiserfs_find_entry(old_dir, old_dentry->d_name.name,
+fs/./reiserfs/namei.c:				old_dentry->d_name.len, &old_entry_path,
+fs/./reiserfs/namei.c:	    reiserfs_add_entry(&th, new_dir, new_dentry->d_name.name,
+fs/./reiserfs/namei.c:			       new_dentry->d_name.len, old_inode, 0);
+fs/./reiserfs/namei.c:		    reiserfs_find_entry(new_dir, new_dentry->d_name.name,
+fs/./reiserfs/namei.c:					new_dentry->d_name.len, &new_entry_path,
+fs/./reiserfs/namei.c:		    !entry_points_to_object(new_dentry->d_name.name,
+fs/./reiserfs/namei.c:					    new_dentry->d_name.len,
+fs/./reiserfs/namei.c:		    !entry_points_to_object(old_dentry->d_name.name,
+fs/./reiserfs/namei.c:					    old_dentry->d_name.len,
+fs/./reiserfs/super.c:	struct reiserfs_super_block *rs = SB_DISK_SUPER_BLOCK(dentry->d_sb);
+fs/./reiserfs/super.c:	buf->f_bsize = dentry->d_sb->s_blocksize;
+fs/./reiserfs/super.c:	if (path->dentry->d_sb != sb) {
+fs/./reiserfs/super.c:		if (path->dentry->d_parent != sb->s_root)
+fs/./reiserfs/xattr.c:		reiserfs_error(dentry->d_sb, "xattr-20003",
+fs/./reiserfs/xattr.c:	struct inode *dir = d_inode(dentry->d_parent);
+fs/./reiserfs/xattr.c:		handler = find_xattr_handler_prefix(b->dentry->d_sb->s_xattr,
+fs/./reiserfs/xattr.c:	if (!dentry->d_sb->s_xattr ||
+fs/./reiserfs/xattr.c:	struct inode *inode = d_inode(dentry->d_parent);
+fs/./reiserfs/xattr.c:		reiserfs_warning(dentry->d_sb, "jdm-20006",
+fs/./reiserfs/xattr.c:	reiserfs_info(dentry->d_sb, "Created %s - reserved for xattr "
+fs/./reiserfs/xattr_user.c:	return reiserfs_xattrs_user(dentry->d_sb);
+fs/./romfs/super.c:	name = dentry->d_name.name;
+fs/./romfs/super.c:	len = dentry->d_name.len;
+fs/./romfs/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./romfs/super.c:		(romfs_maxsize(dentry->d_sb) + ROMBSIZE - 1) >> ROMBSBITS;
+fs/./squashfs/namei.c:	const unsigned char *name = dentry->d_name.name;
+fs/./squashfs/namei.c:	int len = dentry->d_name.len;
+fs/./squashfs/super.c:	struct squashfs_sb_info *msblk = dentry->d_sb->s_fs_info;
+fs/./squashfs/super.c:	u64 id = huge_encode_dev(dentry->d_sb->s_bdev->bd_dev);
+fs/./statfs.c:	if (!dentry->d_sb->s_op->statfs)
+fs/./statfs.c:	retval = dentry->d_sb->s_op->statfs(dentry, buf);
+fs/./sync.c:	sb = f.file->f_path.dentry->d_sb;
+fs/./sysv/dir.c:	const char * name = dentry->d_name.name;
+fs/./sysv/dir.c:	int namelen = dentry->d_name.len;
+fs/./sysv/dir.c:	struct inode * dir = d_inode(dentry->d_parent);
+fs/./sysv/dir.c:	struct inode *dir = d_inode(dentry->d_parent);
+fs/./sysv/dir.c:	const char * name = dentry->d_name.name;
+fs/./sysv/dir.c:	int namelen = dentry->d_name.len;
+fs/./sysv/dir.c:		res = fs16_to_cpu(SYSV_SB(dentry->d_sb), de->inode);
+fs/./sysv/inode.c:	struct super_block *sb = dentry->d_sb;
+fs/./sysv/itree.c:	struct super_block *s = path->dentry->d_sb;
+fs/./sysv/namei.c:	if (dentry->d_name.len > SYSV_NAMELEN)
+fs/./tracefs/inode.c:	int len = dentry->d_name.len;
+fs/./tracefs/inode.c:	dname = dentry->d_name.name;
+fs/./tracefs/inode.c:	inode_unlock(dentry->d_inode);
+fs/./tracefs/inode.c:	inode_lock(dentry->d_inode);
+fs/./tracefs/inode.c:	if (!IS_ERR(dentry) && dentry->d_inode) {
+fs/./tracefs/inode.c:	inode_unlock(dentry->d_parent->d_inode);
+fs/./tracefs/inode.c:	inode_unlock(dentry->d_parent->d_inode);
+fs/./tracefs/inode.c:	inode = tracefs_get_inode(dentry->d_sb);
+fs/./tracefs/inode.c:	fsnotify_create(dentry->d_parent->d_inode, dentry);
+fs/./tracefs/inode.c:	inode = tracefs_get_inode(dentry->d_sb);
+fs/./tracefs/inode.c:	inc_nlink(dentry->d_parent->d_inode);
+fs/./tracefs/inode.c:	fsnotify_mkdir(dentry->d_parent->d_inode, dentry);
+fs/./tracefs/inode.c:		if (dentry->d_inode) {
+fs/./tracefs/inode.c:			switch (dentry->d_inode->i_mode & S_IFMT) {
+fs/./tracefs/inode.c:	parent = dentry->d_parent;
+fs/./ubifs/dir.c:	err = fscrypt_setup_filename(dir, &dentry->d_name, 1, &nm);
+fs/./ubifs/dir.c:	err = fscrypt_setup_filename(dir, &dentry->d_name, 0, &nm);
+fs/./ubifs/dir.c:	err = ubifs_init_security(dir, inode, &dentry->d_name);
+fs/./ubifs/dir.c:	err = fscrypt_setup_filename(dir, &dentry->d_name, 0, &nm);
+fs/./ubifs/dir.c:	err = ubifs_init_security(dir, inode, &dentry->d_name);
+fs/./ubifs/dir.c:	int err, sz_change = CALC_DENT_SIZE(dentry->d_name.len);
+fs/./ubifs/dir.c:	err = fscrypt_setup_filename(dir, &dentry->d_name, 0, &nm);
+fs/./ubifs/dir.c:	err = fscrypt_setup_filename(dir, &dentry->d_name, 1, &nm);
+fs/./ubifs/dir.c:	err = fscrypt_setup_filename(dir, &dentry->d_name, 1, &nm);
+fs/./ubifs/dir.c:	err = fscrypt_setup_filename(dir, &dentry->d_name, 0, &nm);
+fs/./ubifs/dir.c:	err = ubifs_init_security(dir, inode, &dentry->d_name);
+fs/./ubifs/dir.c:	err = fscrypt_setup_filename(dir, &dentry->d_name, 0, &nm);
+fs/./ubifs/dir.c:	err = ubifs_init_security(dir, inode, &dentry->d_name);
+fs/./ubifs/dir.c:	err = fscrypt_setup_filename(dir, &dentry->d_name, 0, &nm);
+fs/./ubifs/dir.c:	err = ubifs_init_security(dir, inode, &dentry->d_name);
+fs/./ubifs/dir.c:	err = fscrypt_setup_filename(old_dir, &old_dentry->d_name, 0, &old_nm);
+fs/./ubifs/dir.c:	err = fscrypt_setup_filename(new_dir, &new_dentry->d_name, 0, &new_nm);
+fs/./ubifs/dir.c:	err = fscrypt_setup_filename(old_dir, &old_dentry->d_name, 0, &fst_nm);
+fs/./ubifs/dir.c:	err = fscrypt_setup_filename(new_dir, &new_dentry->d_name, 0, &snd_nm);
+fs/./ubifs/super.c:	struct ubifs_info *c = dentry->d_sb->s_fs_info;
+fs/./ubifs/xattr.c:		struct ubifs_info *c = dentry->i_sb->s_fs_info;
+fs/./udf/namei.c:	if (dentry->d_name.len > UDF_NAME_LEN)
+fs/./udf/namei.c:	if (!strncmp(dentry->d_name.name, ".B=", 3)) {
+fs/./udf/namei.c:				simple_strtoul(dentry->d_name.name + 3,
+fs/./udf/namei.c:	fi = udf_find_entry(dir, &dentry->d_name, &fibh, &cfi);
+fs/./udf/namei.c:		if (!dentry->d_name.len) {
+fs/./udf/namei.c:		namelen = udf_put_filename(sb, dentry->d_name.name,
+fs/./udf/namei.c:					   dentry->d_name.len,
+fs/./udf/namei.c:	struct inode *dir = d_inode(dentry->d_parent);
+fs/./udf/namei.c:	fi = udf_find_entry(dir, &dentry->d_name, &fibh, &cfi);
+fs/./udf/namei.c:	fi = udf_find_entry(dir, &dentry->d_name, &fibh, &cfi);
+fs/./udf/namei.c:	ofi = udf_find_entry(old_dir, &old_dentry->d_name, &ofibh, &ocfi);
+fs/./udf/namei.c:	nfi = udf_find_entry(new_dir, &new_dentry->d_name, &nfibh, &ncfi);
+fs/./udf/namei.c:	ofi = udf_find_entry(old_dir, &old_dentry->d_name, &ofibh, &ocfi);
+fs/./udf/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./ufs/dir.c:	struct inode *dir = d_inode(dentry->d_parent);
+fs/./ufs/dir.c:	const unsigned char *name = dentry->d_name.name;
+fs/./ufs/dir.c:	int namelen = dentry->d_name.len;
+fs/./ufs/namei.c:	if (dentry->d_name.len > UFS_MAXNAMLEN)
+fs/./ufs/namei.c:	ino = ufs_inode_by_name(dir, &dentry->d_name);
+fs/./ufs/namei.c:	de = ufs_find_entry(dir, &dentry->d_name, &page);
+fs/./ufs/namei.c:	old_de = ufs_find_entry(old_dir, &old_dentry->d_name, &old_page);
+fs/./ufs/namei.c:		new_de = ufs_find_entry(new_dir, &new_dentry->d_name, &new_page);
+fs/./ufs/super.c:	struct super_block *sb = dentry->d_sb;
+fs/./utimes.c:	struct inode *inode = path->dentry->d_inode;
+fs/./xattr.c:	struct inode *inode = dentry->d_inode;
+fs/./xattr.c:	struct inode *inode = dentry->d_inode;
+fs/./xattr.c:	struct inode *inode = dentry->d_inode;
+fs/./xattr.c:	struct inode *inode = dentry->d_inode;
+fs/./xattr.c:	struct inode *inode = dentry->d_inode;
+fs/./xattr.c:	const struct xattr_handler *handler, **handlers = dentry->d_sb->s_xattr;
+fs/./xfs/xfs_iops.c:	namep->name = dentry->d_name.name;
+fs/./xfs/xfs_iops.c:	namep->len = dentry->d_name.len;
+fs/./xfs/xfs_iops.c:	namep->name = dentry->d_name.name;
+fs/./xfs/xfs_iops.c:	namep->len = dentry->d_name.len;
+fs/./xfs/xfs_iops.c:	error = xfs_init_security(inode, dir, &dentry->d_name);
+fs/./xfs/xfs_iops.c:	if (dentry->d_name.len >= MAXNAMELEN)
+fs/./xfs/xfs_iops.c:	if (dentry->d_name.len >= MAXNAMELEN)
+fs/./xfs/xfs_iops.c:	error = xfs_init_security(inode, dir, &dentry->d_name);
+fs/./xfs/xfs_super.c:	struct xfs_mount	*mp = XFS_M(dentry->d_sb);

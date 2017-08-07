@@ -257,7 +257,7 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	struct mount *mnt;
 	int ret = 0;
 	struct vfsmount *vfsmnt = NULL;
-	
+	int mask_special = RECURSIVE_ADD_FSNOTIFY_EVENTS & ~FS_OPEN;
 	/* global tests shouldn't care about events on child only the specific event */
 	__u32 test_mask = (mask & ~FS_EVENT_ON_CHILD);
 
@@ -267,7 +267,8 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	}
 	else
 		mnt = NULL;
-	if(mask & RECURSIVE_ADD_FSNOTIFY_EVENTS)
+	
+	if(mask & mask_special)//RECURSIVE_ADD_FSNOTIFY_EVENTS) {
 		fsnotify_apply_recursive_rules(to_tell, vfsmnt, file_name);
 	/*
 	 * Optimization: srcu_read_lock() has a memory barrier which can
@@ -353,11 +354,12 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 
 		iter_info.inode_mark = inode_mark;
 		iter_info.vfsmount_mark = vfsmount_mark;
-
+		PDEBUGG("%s Sending event for file %s\n", __func__, file_name);
 		ret = send_to_group(to_tell, inode_mark, vfsmount_mark, mask,
 				    data, data_is, cookie, file_name,
 				    &iter_info);
 
+		PDEBUGG("%s Sent event for file %s\n", __func__, file_name);
 		if (ret && (mask & ALL_FSNOTIFY_PERM_EVENTS))
 			goto out;
 

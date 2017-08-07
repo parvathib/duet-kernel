@@ -95,7 +95,7 @@ static inline __u32 inotify_arg_to_mask(u32 arg)
 	mask = (FS_IN_IGNORED | FS_EVENT_ON_CHILD | FS_UNMOUNT);
 
 	/* mask off the flags used to open the fd */
-	mask |= (arg & (IN_ALL_EVENTS | IN_ONESHOT | IN_EXCL_UNLINK));
+	mask |= (arg & (IN_ALL_EVENTS | IN_ONESHOT | IN_EXCL_UNLINK | IN_RECURSIVE_ADD));
 
 	return mask;
 }
@@ -420,14 +420,15 @@ static void inotify_remove_from_idr(struct fsnotify_group *group,
 		goto out;
 	}
 	
-	/* Lets look in the idr to see if we find it */
-	found_i_mark = inotify_idr_find_locked(group, wd);
-	if (unlikely(!found_i_mark)) {
-		WARN_ONCE(1, "%s: i_mark=%p i_mark->wd=%d i_mark->group=%p\n",
-			__func__, i_mark, i_mark->wd, i_mark->fsn_mark.group);
-		goto out;
+	if(!fsnotify_is_recursive_mark(&i_mark->fsn_mark)) {	
+		/* Lets look in the idr to see if we find it */
+		found_i_mark = inotify_idr_find_locked(group, wd);
+		if (unlikely(!found_i_mark)) {
+			WARN_ONCE(1, "%s: i_mark=%p i_mark->wd=%d i_mark->group=%p\n",
+				__func__, i_mark, i_mark->wd, i_mark->fsn_mark.group);
+			goto out;
+		}
 	}
-
 	/*
 	 * We found an mark in the idr at the right wd, but it's
 	 * not the mark we were told to remove.  eparis seriously
@@ -450,7 +451,8 @@ static void inotify_remove_from_idr(struct fsnotify_group *group,
 		printk(KERN_ERR "%s: i_mark=%p i_mark->wd=%d i_mark->group=%p\n",
 			 __func__, i_mark, i_mark->wd, i_mark->fsn_mark.group);
 		/* we can't really recover with bad ref cnting.. */
-		BUG();
+		//BUG();
+		while(1);
 	}
 
 	idr_remove(idr, wd);
@@ -462,6 +464,22 @@ out:
 	/* match the ref taken by inotify_idr_find_locked() */
 	if (found_i_mark)
 		fsnotify_put_mark(&found_i_mark->fsn_mark);
+}
+
+void inotify_drop_implicit_ref(struct inotify_inode_mark *i_mark)
+{
+	if(i_mark->wd == -1) {
+		WARN_ONCE(1, "%s: i_mark=%p i_mark->wd=%d i_mark->group=%p\n",
+			__func__, i_mark, i_mark->wd, i_mark->fsn_mark.group);	
+	}
+	if (unlikely(atomic_read(&i_mark->fsn_mark.refcnt) < 2)) {
+		printk(KERN_ERR "%s: i_mark=%p i_mark->wd=%d i_mark->group=%p\n",
+		__func__, i_mark, i_mark->wd, i_mark->fsn_mark.group);
+		/* we can't really recover with bad ref cnting.. */
+		BUG();
+	}
+	/* To match for refcnt incremented when wd is assigned */
+	fsnotify_put_mark(&i_mark->fsn_mark);
 }
 
 /*
@@ -477,10 +495,18 @@ void inotify_ignored_and_remove_idr(struct fsnotify_mark *fsn_mark,
 			     NULL, FSNOTIFY_EVENT_NONE, NULL, 0, NULL);
 
 	i_mark = container_of(fsn_mark, struct inotify_inode_mark, fsn_mark);
-	/* remove this mark from the idr */
-	inotify_remove_from_idr(group, i_mark);
-
-	dec_inotify_watches(group->inotify_data.ucounts);
+	if(!fsnotify_is_recursive_mark(fsn_mark)) {
+		/* remove this mark from the idr */
+		inotify_remove_from_idr(group, i_mark);
+		PDEBUG("%s dropped explicit mark reference mark: %p <refcnt> %d \n", __func__, fsn_mark, atomic_read(&fsn_mark->refcnt));
+		dec_inotify_watches(group->inotify_data.ucounts);
+	}
+	else {
+		inotify_drop_implicit_ref(i_mark);
+		PDEBUG("%s dropped implicit reference  mark : %p <refcnt> %d \n", __func__, fsn_mark, atomic_read(&fsn_mark->refcnt));
+		//fsnotify_put_mark(fsn_mark);
+	}
+	
 }
 
 int __inotify_update_existing_watch(struct fsnotify_mark *fsn_mark, struct inode *inode,
@@ -492,6 +518,7 @@ int __inotify_update_existing_watch(struct fsnotify_mark *fsn_mark, struct inode
 	int add_rule = 0;
 	int save_spare_mask = 0;
 	__u32 spare_mask = 0;
+	PDEBUG("%s mask %x implicit_watch %d implicit_wd %d \n", __func__, mask, implicit_watch, implicit_wd);
 	
 	spin_lock(&fsn_mark->lock);
 	old_mask = fsn_mark->mask;
@@ -538,11 +565,12 @@ int __inotify_update_existing_watch(struct fsnotify_mark *fsn_mark, struct inode
 			fsn_mark->spare_mask |= spare_mask;
 		}
 	}
-	else
+	else {
 		fsn_mark->mask = mask;
 		if(save_spare_mask) {
 			fsn_mark->spare_mask = spare_mask;
 		}
+	}
 
 	new_mask = fsn_mark->mask;
 	spin_unlock(&fsn_mark->lock);
@@ -574,21 +602,24 @@ static int inotify_update_existing_watch(struct fsnotify_group *group,
 					 u32 arg)
 {
 	struct fsnotify_mark *fsn_mark;
-	int add = !!(arg & IN_MASK_ADD);
+	int add = (arg & IN_MASK_ADD) ? 1 : 0;
+	PDEBUGG("%s, original mask %x\n", __func__, arg);
 	__u32 mask = inotify_arg_to_mask(arg);
 	int ret;
+	PDEBUGG("%s, modified mask %x\n", __func__, mask);
 	fsn_mark = fsnotify_find_mark(&inode->i_fsnotify_marks, group);
 	if (!fsn_mark) {
 		ret = -ENOENT;
 		goto end;
 	}
 	ret = __inotify_update_existing_watch(fsn_mark, inode, mask, add, 0, -1); 
-end:
 	/* match the get from fsnotify_find_mark() */
 	fsnotify_put_mark(fsn_mark);
-
+end:
 	return ret;
 }
+
+
 
 int inotify_new_watch(struct fsnotify_group *group,
 			     struct inode *inode,
@@ -600,8 +631,9 @@ int inotify_new_watch(struct fsnotify_group *group,
 	struct idr *idr = &group->inotify_data.idr;
 	spinlock_t *idr_lock = &group->inotify_data.idr_lock;
 	int implicit_watch = 0;
+	PDEBUGG("Entered %s: Before arg to mask mask : %x wd : %d\n", __func__, arg, wd);
 	mask = inotify_arg_to_mask(arg);
-	printk("__TEST__ add new watch wd: %d\n", wd);
+	PDEBUGG("%s: After arg to mask mask : %x wd : %d\n", __func__, mask, wd);
 	tmp_i_mark = kmem_cache_alloc(inotify_inode_mark_cachep, GFP_KERNEL);
 	if (unlikely(!tmp_i_mark))
 		return -ENOMEM;
@@ -615,6 +647,7 @@ int inotify_new_watch(struct fsnotify_group *group,
 		 * Implicit add watch. Use the one given wd and increment refcnt  
 		 * (to compensate for not calling inotify_add_to_idr() 
 		 */
+		PDEBUGG("%s: New Implicit watch under wd : %d \n", __func__, wd);
 		fsnotify_get_mark(&tmp_i_mark->fsn_mark);
 		implicit_watch = 1; 
 	} else { 
@@ -622,21 +655,25 @@ int inotify_new_watch(struct fsnotify_group *group,
 		ret = inotify_add_to_idr(idr, idr_lock, tmp_i_mark);
 		if (ret)
 			goto out_err;
+		PDEBUG("%s: New Explicit watch under wd : %d \n", __func__, ret);
 	}
-	/* increment the number of watches the user has */
-	if (!inc_inotify_watches(group->inotify_data.ucounts)) { //TODO: check for the number of watches
-		inotify_remove_from_idr(group, tmp_i_mark);
-		ret = -ENOSPC;
-		goto out_err;
+	if(!implicit_watch) {
+		/* increment the number of watches the user has */
+		if (!inc_inotify_watches(group->inotify_data.ucounts)) { //TODO: check for the number of watches
+			inotify_remove_from_idr(group, tmp_i_mark);
+			ret = -ENOSPC;
+			goto out_err;
+		}
 	}
 
+	PDEBUGG("%s: Before calling fsnotify_add_mark_locked  mask : %x\n", __func__,tmp_i_mark->fsn_mark.mask);
 	/* we are on the idr, now get on the inode */
 	ret = fsnotify_add_mark_locked(&tmp_i_mark->fsn_mark, inode, NULL, 0, implicit_watch);
 	if (ret) {
 		/* we failed to get on the inode */
-		if(implicit_watch)
-			/* To match for refcnt incremented when wd is assigned */
-			fsnotify_put_mark(&tmp_i_mark->fsn_mark);
+		if(implicit_watch) {
+			inotify_drop_implicit_ref(tmp_i_mark);
+		}
 		else
 			/* get off the idr */
 			inotify_remove_from_idr(group, tmp_i_mark);
@@ -656,6 +693,7 @@ out_err:
 static int inotify_update_watch(struct fsnotify_group *group, struct inode *inode, u32 arg)
 {
 	int ret = 0;
+	PDEBUGG("Entered %s", __func__);
 	mutex_lock(&group->mark_mutex);
 	/* try to update and existing watch with the new arg */
 	ret = inotify_update_existing_watch(group, inode, arg);
@@ -745,7 +783,7 @@ SYSCALL_DEFINE3(inotify_add_watch, int, fd, const char __user *, pathname,
 	struct fd f;
 	int ret;
 	unsigned flags = 0;
-
+	
 	/*
 	 * We share a lot of code with fs/dnotify.  We also share
 	 * the bit layout between inotify's IN_* and the fsnotify
@@ -852,8 +890,9 @@ static int __init inotify_user_setup(void)
 	BUILD_BUG_ON(IN_EXCL_UNLINK != FS_EXCL_UNLINK);
 	BUILD_BUG_ON(IN_ISDIR != FS_ISDIR);
 	BUILD_BUG_ON(IN_ONESHOT != FS_IN_ONESHOT);
+	BUILD_BUG_ON(IN_RECURSIVE_ADD != FS_RECURSIVE_ADD);
 
-	BUG_ON(hweight32(ALL_INOTIFY_BITS) != 21);
+	BUG_ON(hweight32(ALL_INOTIFY_BITS) != 22);
 
 	inotify_inode_mark_cachep = KMEM_CACHE(inotify_inode_mark, SLAB_PANIC);
 	fsnotify_recursive_rules_init();

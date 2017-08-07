@@ -111,11 +111,17 @@ struct pool_mask{
 	struct hlist_node hentry;
 };
 atomic_t g_rutime;
-static DEFINE_SPINLOCK(mask_pool_lock);
+
+#define FSNOTIFY_RULE_STACK_SIZE (1 << 7)
+struct {
+	struct inode *stack[FSNOTIFY_RULE_STACK_SIZE];
+	int top;
+}S;
+
 #define FSNOTIFY_GROUP_MASK_BUCKETS 7
 DEFINE_HASHTABLE(pooled_group_masks, FSNOTIFY_GROUP_MASK_BUCKETS); //maximum of 128 groups allowed
+static DEFINE_SPINLOCK(mask_pool_lock);
 
-;
 void fsnotify_recursive_rules_init(void) 
 {
 	atomic_set(&g_rutime, 0);
@@ -226,7 +232,6 @@ void fsnotify_put_mark(struct fsnotify_mark *mark)
 	struct fsnotify_mark_connector *conn;
 	struct inode *inode = NULL;
 	bool free_conn = false;
-	dump_stack();
 	/* Catch marks that were actually never attached to object */
 	if (!mark->connector) {
 		if (atomic_dec_and_test(&mark->refcnt))
@@ -375,9 +380,10 @@ void fsnotify_detach_mark(struct fsnotify_mark *mark)
 	spin_unlock(&mark->lock);
 
 	atomic_dec(&group->num_marks);
-
+	
 	/* Drop mark reference acquired in fsnotify_add_mark_locked() */
 	fsnotify_put_mark(mark);
+	PDEBUG("%s Dropping mark reference mark : %p <refcnt> %d \n", __func__, mark, atomic_read(&mark->refcnt));
 }
 
 /*
@@ -418,7 +424,6 @@ void fsnotify_destroy_mark(struct fsnotify_mark *mark,
 	if(!conn) {
 		return; 
 	}
-	dump_stack();
 	mutex_lock_nested(&group->mark_mutex, SINGLE_DEPTH_NESTING);
 	if(implicit_watch) {
 		spin_lock(&mark->lock);
@@ -545,6 +550,7 @@ out:
 static void __fsnotify_update_recursive_mark_list(struct fsnotify_mark_connector *conn,
 				struct fsnotify_mark *mark, int add) 
 {
+	PDEBUG("%s %sing recursive watch \n", __func__, (add ? "add" : "update"));
 	if(add) {
 		hlist_add_head_rcu(&mark->rule_list, &conn->r_list);
 		conn->flags |= FSNOTIFY_OBJ_TYPE_REC_RULE;
@@ -579,18 +585,18 @@ struct pool_mask *fsnotify_find_hnode(struct fsnotify_group *group)
 	return NULL;
 }
 
-int fsnotify_add_hnode(struct pool_mask *hnode, struct fsnotify_group *group)
+int fsnotify_add_hnode(struct pool_mask **hnode, struct fsnotify_group *group)
 {
 	int alloc_len = sizeof(struct pool_mask);
-	hnode = kmalloc(alloc_len, GFP_KERNEL);
-	if(unlikely(!hnode)) {
+	*hnode = kmalloc(alloc_len, GFP_KERNEL);
+	if(!(*hnode)) {
 		return -ENOMEM; 	
 	}
-	hnode->group = group;
-	hnode->updated = 0;
-	hnode->mask = 0;
-	hnode->mark_id = 0;
-	hash_add(pooled_group_masks, &hnode->hentry, (unsigned long)group);
+	(*hnode)->group = group;
+	(*hnode)->updated = 0;
+	(*hnode)->mask = 0;
+	(*hnode)->mark_id = 0;
+	hash_add(pooled_group_masks, &(*hnode)->hentry, (unsigned long)group);
 	return 0;	
 }
 
@@ -616,45 +622,64 @@ void fsnotify_free_pooled_masks(void)
 void fsnotify_update_inode_rule_time(struct fsnotify_mark_connector *conn) {
 
 	int global_rutime;
-	int mark_rutime;
-	do {
-		global_rutime = atomic_read(&g_rutime);
+	int mark_rutime = atomic_read(&conn->r_utime);
+	for(;;){
+		int old_rutime;
 		//struct fsnotify_mark_connector *conn = fsnotify_grab_connector(connp);
-		mark_rutime = atomic_cmpxchg(&conn->r_utime, global_rutime, atomic_read(&g_rutime));
+		old_rutime = atomic_cmpxchg(&conn->r_utime, mark_rutime, atomic_read(&g_rutime));
+		if(old_rutime == mark_rutime)
+			break;
+		mark_rutime = old_rutime;
 		//spin_unlock(&conn->lock);
-	}while(global_rutime != mark_rutime);
+	}
 	return;	
 }
 
 void fsnotify_update_existing_mark(struct pool_mask *hnode, struct fsnotify_group *group, 
 				struct inode *inode, struct fsnotify_mark *mark)
 {
+	int add = 0;
 	u32 orig_mask = mark->spare_mask;
 	u32 new_mask = hnode->mask | orig_mask;
 	hnode->mark_id = group->ops->get_mark_priv_data(mark);
-	group->ops->update_mark(mark, inode, new_mask, 0, 1, hnode->mark_id);	
+	PDEBUGG("%s BEFORE: orig_mask %x new_mask %x mark_id : %d hnode->updated: %d for inode %p\n", __func__, orig_mask, new_mask, hnode->mark_id,hnode->updated, inode);
+	if(!new_mask)
+		add = 1;	
+	group->ops->update_mark(mark, inode, new_mask, add, 1, hnode->mark_id);	
 	hnode->mask = mark->mask;
 	hnode->updated = 1;
+	PDEBUGG("%s AFTER: updated mask : %x, hnode->updated: %d for inode %p\n", __func__, hnode->mask, hnode->updated, inode);
 	return;
 }
 
-int __fsnotify_update_marks_inode(struct inode *inode) 
+int __fsnotify_update_marks_inode(struct inode *inode, struct vfsmount *mnt) 
 {
+	PDEBUGG("Entering %s \n", __func__);
 	struct fsnotify_mark_connector *inode_conn = NULL;	
 	struct hlist_node *inode_node = NULL, /**vfsmount_node = NULL, */*rule_node = NULL;
 	struct fsnotify_mark *inode_mark = NULL/*, *vfsmount_mark = NULL*/;
 	struct fsnotify_group *inode_group = NULL/*, *vfsmount_group*/;
 	struct fsnotify_iter_info iter_info;
-	struct pool_mask *hash_node;
+	struct pool_mask *hash_node = NULL;
 	int bkt;
 	int ret = 0;
+	int err;
+	int no_of_rules = 0;
 	iter_info.srcu_idx = srcu_read_lock(&fsnotify_mark_srcu);	
-	
+restart:
 	inode_conn = srcu_dereference(inode->i_fsnotify_marks, &fsnotify_mark_srcu);
 	if(!inode_conn) { 
-		ret =  -EINVAL;
-		goto out;
+		srcu_read_unlock(&fsnotify_mark_srcu, iter_info.srcu_idx);
+		err = fsnotify_attach_connector_to_object(&inode->i_fsnotify_marks, inode, mnt);
+		if (err) {
+			ret =  -EINVAL;
+			goto out;
+		}
+		PDEBUGG("%s Attached connector for inode %p\n", __func__, inode);
+		goto restart;
 	}
+	PDEBUGG("%s Got the connector for inode %p\n", __func__, inode);
+	
 	/* Get the reference of head of rules list for this inode */	
 	rule_node = srcu_dereference(inode_conn->r_list.first,
 						&fsnotify_mark_srcu);
@@ -675,22 +700,32 @@ int __fsnotify_update_marks_inode(struct inode *inode)
 		 * 4. Go through the hash list and check if there are any hash nodes which are yet to be updated. 
 		 *    As you leave the hash nodes, reset the bit.
 		 */ 
-		if(inode_group && (inode_mark->flags & FSNOTIFY_MARK_FLAG_RULE)) {
+		PDEBUGG("%s inode_group %p is_rule_mark %d for inode %p\n", __func__, inode_group, fsnotify_is_rule_mark(inode_mark), inode);
+		if(inode_group && fsnotify_is_rule_mark(inode_mark)) {
+			no_of_rules++;
 			hash_node = fsnotify_find_hnode(inode_group);
+			if(hash_node)
+				PDEBUGG("%s found hash node %p for inode %p\n", __func__, hash_node, inode);
 			if(!hash_node) {
-				ret = fsnotify_add_hnode(hash_node, inode_group);
-				if(ret)
+				ret = fsnotify_add_hnode(&hash_node, inode_group);
+				if(ret) {
+					PDEBUG("%s could not allocate memory %p for inode %p\n", __func__, hash_node, inode);
 					goto out;
+				}
 			}
-			fsnotify_update_existing_mark(hash_node, inode_group, inode, inode_mark); 
+			mutex_lock(&inode_group->mark_mutex);
+			fsnotify_update_existing_mark(hash_node, inode_group, inode, inode_mark);
+			PDEBUGG("%s Making rule %d: Hashnode %p updated: %d  going to apply rules for inode %p\n", __func__, no_of_rules, hash_node, hash_node->updated, inode);
+			mutex_unlock(&inode_group->mark_mutex); 
 		}
 		rule_node = srcu_dereference(rule_node->next,
 						      &fsnotify_mark_srcu);	
 	}
 	
+	PDEBUGG("%s Done with rules for inode %p\n", __func__, inode);
 	/* start adding/updating the marks at this inode */
 	if(hash_empty(pooled_group_masks))
-		goto out;
+		goto update;
 	inode_node = srcu_dereference(inode_conn->list.first,
 					      &fsnotify_mark_srcu);
 	while(inode_node) {
@@ -699,9 +734,14 @@ int __fsnotify_update_marks_inode(struct inode *inode)
 		inode_group = inode_mark->group;
 		if(inode_group) {
 			hash_node = fsnotify_find_hnode(inode_group);
-			if((hash_node) && !hash_node->updated)
+			if(hash_node)
+				PDEBUG("%s Applying rules to existing nodes: Hashnode %p updated: %d  going to apply rules for inode %p\n", __func__, hash_node, hash_node->updated, inode);
+			if((hash_node) && !hash_node->updated) {
+				mutex_lock(&inode_group->mark_mutex);
 				fsnotify_update_existing_mark(hash_node, inode_group, inode, inode_mark); 
-			if(!hash_node && fsnotify_is_normal_mark(inode_mark))
+				mutex_unlock(&inode_group->mark_mutex); 
+			}
+			if(!hash_node && fsnotify_is_recursive_mark(inode_mark))
 				fsnotify_destroy_mark(inode_mark, inode_group, 1);
 		}
 		if (inode_group)
@@ -712,17 +752,23 @@ int __fsnotify_update_marks_inode(struct inode *inode)
 	/* Now, iterate over all the bucket lists and see if there are any other marks are left to be added */
 	hash_for_each(pooled_group_masks, bkt, hash_node, hentry) {
 		if(hash_node) {
-			if(!hash_node->updated)
+			PDEBUG("%s Applying rules to new nodes: Hashnode %p updated: %d  going to apply rules for inode %p\n", __func__, hash_node, hash_node->updated, inode);
+			if(!hash_node->updated) {
 				inode_group = hash_node->group;
+				mutex_lock(&inode_group->mark_mutex);
 				inode_group->ops->add_new_mark(inode_group, inode, 
 						hash_node->mask, hash_node->mark_id);	
+				mutex_unlock(&inode_group->mark_mutex);
+			} 
 			hash_node->updated = 0;	
 		}
-	} 
+	}
+update: 
 	fsnotify_update_inode_rule_time(inode_conn);
-		
+	PDEBUG("%s Updated time %d , global time %d for inode %p\n", __func__, atomic_read(&inode_conn->r_utime), atomic_read(&g_rutime), inode);
 out:
 	srcu_read_unlock(&fsnotify_mark_srcu, iter_info.srcu_idx);
+	PDEBUGG("Exiting %s \n", __func__);
 	return ret;
 }
 
@@ -757,12 +803,18 @@ restart:
 	srcu_read_unlock(&fsnotify_mark_srcu, idx);
 	return ret;
 }
-
+/*
 int fsnotify_update_marks_inodes(struct dentry *dentry, struct inode *inode, struct vfsmount *mnt)
 {
 	struct dentry *parent;
 	int ret = 0;
-	dget(dentry);
+	if(!dentry) {
+		PDEBUG("dentry is null %s\n", __func__);
+		ret = -1;
+		goto out;
+	}
+	PDEBUG("Entered %s dentry name %s\n", __func__, dentry->d_name.name);
+	//dget(dentry);
 	if(IS_ROOT(dentry) || fsnotify_is_latest(inode, mnt)) {
 		ret =  __fsnotify_update_marks_inode(inode);
 		goto out;
@@ -774,50 +826,143 @@ int fsnotify_update_marks_inodes(struct dentry *dentry, struct inode *inode, str
 		ret = __fsnotify_update_marks_inode(inode);
 out:	
 	dput(dentry);
+	PDEBUG("Exited %s dentry name %s\n", __func__, dentry->d_name.name);
 	return ret;
+}
+*/
+
+
+bool fsnotify_stack_empty(void)
+{
+	if(S.top == -1) 
+		return true;
+	else
+		return false;
+}
+
+void fsnotify_init_pool_masks(void)
+{
+	hash_init(pooled_group_masks);
+	memset(S.stack, 0, sizeof(struct inode *) * FSNOTIFY_RULE_STACK_SIZE);
+	S.top = -1;
+}
+
+int fsnotify_push(struct inode *inode)
+{	
+	S.top += 1;
+	if(S.top >= FSNOTIFY_RULE_STACK_SIZE) 
+		return -1;
+	S.stack[S.top] = inode;
+	return 0;
+}
+
+struct inode *fsnotify_pop(void)
+{
+	if(fsnotify_stack_empty()) {
+		return NULL;
+	}
+	S.top -= 1;
+	return S.stack[S.top + 1];
 }
 
 struct dentry *fsnotify_get_dentry(struct inode* inode,
                                 const unsigned char *file_name)
 {      
-	struct dentry *alias;	
-	spin_lock(&inode->i_lock); 
+	struct dentry *alias = NULL;	
+	PDEBUG("%s its a file with name %s\n", __func__, file_name);
+	//spin_lock(&inode->i_lock); 
         if(hlist_empty(&inode->i_dentry)) {
-                return NULL;
+                goto out;
         }
         hlist_for_each_entry(alias, &inode->i_dentry, d_u.d_alias) {
-                if (IS_ROOT(alias) && (alias->d_flags & DCACHE_DISCONNECTED))
-                        continue;
                 if(!strcmp(alias->d_name.name, file_name)){
                         break;
                 }
+                if (IS_ROOT(alias) && (alias->d_flags & DCACHE_DISCONNECTED))
+                        continue;
         }
-	spin_unlock(&inode->i_lock);
-        //dget(alias);
+out:
+	//spin_unlock(&inode->i_lock);
+        dget(alias);
 	return alias;
+}
+
+int fsnotify_update_marks_inodes(const unsigned char *file_name, struct inode *inode, struct vfsmount *mnt)
+{
+	struct dentry *dentry, *parent; 
+	int ret = 0; 
+	struct inode *next; 
+	int reached_latest = 0;
+	
+	inode = igrab(inode);
+	
+	if((S_ISDIR(inode->i_mode) || !file_name))
+		dentry = d_find_any_alias(inode);
+	else
+		dentry = fsnotify_get_dentry(inode, file_name);
+	if(!dentry) {
+		PDEBUG("%s dentry of the passed inode is null, filename <<%s>>\n", __func__, file_name);
+		iput(inode);
+		return -ENOENT;
+	}
+	PDEBUG("%s PUSH: given filename:<<%s>> dentry filename:<<%s>>, inode %p\n", __func__, file_name, dentry->d_name.name, inode);
+	do {
+		if(fsnotify_push(inode)) {
+			PDEBUG("rules Stack overflow error occured \n");
+			break;
+		}
+		/* If its the root or latest, push inode to the stack and stop traversing */
+		if(IS_ROOT(dentry) || (fsnotify_is_latest(inode, mnt))) {
+			PDEBUG("%s We are at root/latest node :<<%s>>\n", __func__, dentry->d_name.name);
+			dput(dentry);
+			reached_latest = 1;
+			break;
+		}
+		next = igrab(d_inode(dentry->d_parent));
+		dput(dentry);
+		if(!next) {
+			break;
+		}
+		inode = next; 
+		dentry = d_find_any_alias(inode);	
+		PDEBUG("%s PUSH: dentry filename:<<%s>>, inode %p\n", __func__, dentry->d_name.name, inode);
+	}while(1);
+	while((inode = fsnotify_pop()) != NULL) {
+		PDEBUG("%s POP: inode %p\n", __func__, inode);
+		if(reached_latest) {
+			ret =  __fsnotify_update_marks_inode(inode, mnt);
+			if(ret)
+				reached_latest = 0;	
+		}
+		iput(inode);
+	}
+out:
+	return ret;
 }
 
 int fsnotify_apply_recursive_rules(struct inode *inode, struct vfsmount *mnt, 
 				const unsigned char *file_name)
 {
 	int ret = 0;
-	struct dentry *i_dentry = NULL;
+	/* + Temp */ 
+	if(!inode)
+		return ret;
+	if((mnt) && (!inode)) {
+		return ret;
+	}
+	/* - Temp */
 	/* If the global and inode rule update time stamps match, return */
 	if(fsnotify_is_latest(inode, mnt)) {
 		return ret;	
 	}
-	if(!file_name) {
-		i_dentry = fsnotify_get_dentry(inode, file_name);
-	}
-	else {
-		i_dentry = d_find_alias(inode);
-	}
+	PDEBUG("====== Entered %s =======\n", __func__);
 	// TODO: use a more concurrent update mechanism for hash table 
 	spin_lock(&mask_pool_lock);
-	hash_init(pooled_group_masks);
-	ret = fsnotify_update_marks_inodes(i_dentry, inode, mnt); //TODO: should add support for vfsmount
+	fsnotify_init_pool_masks();
+	ret = fsnotify_update_marks_inodes(file_name, inode, mnt); //TODO: should add support for vfsmount
 	fsnotify_free_pooled_masks();	
 	spin_unlock(&mask_pool_lock);
+	PDEBUG("====== Exited %s =======\n", __func__);
 	return ret;		
 
 }
@@ -837,6 +982,7 @@ static int fsnotify_add_mark_list(struct fsnotify_mark *mark,
 	struct fsnotify_mark_connector __rcu **connp;
 	int cmp;
 	int err = 0;
+	PDEBUGG("Entered %s mask %x recursive_set = %d\n", __func__, mark->mask, (mark->mask & FS_RECURSIVE_ADD)? 1 : 0);
 
 	if (WARN_ON(!inode && !mnt))
 		return -EINVAL;
@@ -856,7 +1002,9 @@ restart:
 	}
 	/* add mark to the rule list if user explicitly requests with the flag but only if its a directory*/
 	if(!implicit_watch && (mark->mask & FS_RECURSIVE_ADD)) {
+		PDEBUG("Recursive watch requested\n");
 		if(!S_ISDIR(inode->i_mode)) {
+			printk(KERN_WARNING "Recursive watch requested on a file\n");
 			err = -EINVAL;
 			goto out_err;
 		}
@@ -911,6 +1059,7 @@ int fsnotify_add_mark_locked(struct fsnotify_mark *mark, struct inode *inode,
 	BUG_ON(inode && mnt);
 	BUG_ON(!inode && !mnt);
 	BUG_ON(!mutex_is_locked(&group->mark_mutex));
+	PDEBUG("%s, implicit_watch:%d mask : %x  ", __func__, implicit_watch, mark->mask);
 
 	/*
 	 * LOCKING ORDER!!!!
@@ -925,10 +1074,12 @@ int fsnotify_add_mark_locked(struct fsnotify_mark *mark, struct inode *inode,
 	atomic_inc(&group->num_marks);
 	fsnotify_get_mark(mark); /* for g_list */
 	spin_unlock(&mark->lock);
+	PDEBUG("%s, added in the g_list mark %p <refcnt> %d", __func__, mark, atomic_read(&mark->refcnt));
 	ret = fsnotify_add_mark_list(mark, inode, mnt, allow_dups, implicit_watch);
 	if (ret)
 		goto err;
 
+	PDEBUG("%s added in object list mark %p <refcnt> %d\n", __func__, mark, atomic_read(&mark->refcnt));
 	if (mark->mask)
 		fsnotify_recalc_mask(mark->connector);
 
@@ -1079,6 +1230,7 @@ void fsnotify_init_mark(struct fsnotify_mark *mark,
 	fsnotify_get_group(group);
 	mark->group = group;
 	mark->spare_mask = 0;	
+	mark->mask = 0; //Just in case
 }
 
 /*
@@ -1108,3 +1260,4 @@ void fsnotify_wait_marks_destroyed(void)
 {
 	flush_delayed_work(&reaper_work);
 }
+

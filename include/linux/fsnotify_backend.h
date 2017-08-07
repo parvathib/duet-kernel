@@ -19,6 +19,19 @@
 #include <linux/user_namespace.h>
 #include <linux/hashtable.h>
 
+#undef PDEBUG
+#define NOTIFY_DEBUG
+#ifdef NOTIFY_DEBUG
+     /* This one if debugging is on*/
+#define PDEBUG(fmt, args...) printk( KERN_INFO "notify: " fmt, ## args)
+#else
+#define PDEBUG(fmt, args...) /* not debugging: nothing */
+#endif
+
+#undef PDEBUGG
+#define PDEBUGG(fmt, args...) /* nothing: it's a placeholder */
+
+
 /*
  * IN_* from inotfy.h lines up EXACTLY with FS_*, this is so we can easily
  * convert between them.  dnotify only needs conversion at watch creation
