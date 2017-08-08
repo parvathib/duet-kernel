@@ -621,6 +621,7 @@ void fsnotify_free_pooled_masks(void)
 }
 void fsnotify_update_inode_rule_time(struct fsnotify_mark_connector *conn) {
 
+	int global_rutime;
 	int mark_rutime = atomic_read(&conn->r_utime);
 	for(;;){
 		int old_rutime;
@@ -641,9 +642,9 @@ void fsnotify_update_existing_mark(struct pool_mask *hnode, struct fsnotify_grou
 	u32 orig_mask = mark->spare_mask;
 	u32 new_mask = hnode->mask | orig_mask;
 	hnode->mark_id = group->ops->get_mark_priv_data(mark);
-	PDEBUG("%s BEFORE: new_mask %x = (orig_mask %x | hnode->mask %x), mark->mask : %x,  mark_id : %d hnode->updated: %d for inode %p\n", __func__, new_mask, orig_mask, hnode->mask, mark->mask, hnode->mark_id,hnode->updated, inode);
+	PDEBUG("%s BEFORE: new_mask = (orig_mask %x | hnode->mask %x), mark->mask : %x,  mark_id : %d hnode->updated: %d for inode %p\n", __func__, new_mask, orig_mask, hnode->mask, mark->mask, hnode->mark_id,hnode->updated, inode);
 	if((!new_mask) || (new_mask == mark->mask)) {	
-		PDEBUG("%s AFTER: Not going to update\n", __func__);
+		PDEBUG("%s AFTER: Not going to update\n");
 		//add = 1;
 		goto updated;
 	}	
@@ -704,7 +705,7 @@ restart:
 			 *    As you leave the hash nodes, reset the bit.
 			 */ 
 			PDEBUGG("%s inode_group %p is_rule_mark %d for inode %p\n", __func__, inode_group, fsnotify_is_rule_mark(inode_mark), inode);
-			if(inode_group) {
+			if(inode_group) {//&& fsnotify_is_rule_mark(inode_mark)) {
 				hash_node = fsnotify_find_hnode(inode_group);
 				if(!hash_node) {
 					if(fsnotify_is_rule_mark(inode_mark)) { //If its a rule, allocate hash node
@@ -715,26 +716,45 @@ restart:
 						}
 					}
 					if(fsnotify_is_recursive_mark(inode_mark)) {
-						PDEBUG("%s Removing the mark %p  going to apply rules for inode %p\n", __func__, inode_mark, inode);
 						fsnotify_destroy_mark(inode_mark, inode_group, 1);
 					}
 				}
 				if(hash_node) {
-					PDEBUG("%s Applying rules for existing marks: Hashnode %p updated: %d  is_rule_mark %d going to apply rules for inode %p\n", __func__,  hash_node, hash_node->updated, fsnotify_is_rule_mark(inode_mark), inode);
+					PDEBUG("%s Making and applying rules: Hashnode %p updated: %d  going to apply rules for inode %p\n", __func__,  hash_node, hash_node->updated, inode);
 					mutex_lock(&inode_group->mark_mutex);
 					fsnotify_update_existing_mark(hash_node, inode_group, inode, inode_mark);
 					mutex_unlock(&inode_group->mark_mutex); 
 				}
 			}
-		}
 		rule_node = srcu_dereference(rule_node->next,
 						      &fsnotify_mark_srcu);	
 	}
 	
-	PDEBUG("%s Done with rules for inode %p\n", __func__, inode);
+	PDEBUGG("%s Done with rules for inode %p\n", __func__, inode);
 	/* start adding/updating the marks at this inode */
 	if(hash_empty(pooled_group_masks))
 		goto update;
+#if 0
+	inode_node = srcu_dereference(inode_conn->list.first,
+					      &fsnotify_mark_srcu);
+	while(inode_node) {
+		inode_mark = hlist_entry(srcu_dereference(inode_node, &fsnotify_mark_srcu),
+					 struct fsnotify_mark, obj_list);
+		inode_group = inode_mark->group;
+		if(inode_group) {
+			hash_node = fsnotify_find_hnode(inode_group);
+			if((hash_node) && !hash_node->updated) {
+				PDEBUG("%s Applying rules to existing nodes: Hashnode %p updated: %d  going to apply rules for inode %p\n", __func__, hash_node, hash_node->updated, inode);
+				mutex_lock(&inode_group->mark_mutex);
+				fsnotify_update_existing_mark(hash_node, inode_group, inode, inode_mark); 
+				mutex_unlock(&inode_group->mark_mutex); 
+			}
+		}
+		if (inode_group)
+			inode_node = srcu_dereference(inode_node->next,
+						      &fsnotify_mark_srcu);
+	}
+#endif
 	
 	/* Now, iterate over all the bucket lists and see if there are any other marks are left to be added */
 	hash_for_each(pooled_group_masks, bkt, hash_node, hentry) {
