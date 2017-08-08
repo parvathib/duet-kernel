@@ -647,7 +647,7 @@ int inotify_new_watch(struct fsnotify_group *group,
 		 * Implicit add watch. Use the one given wd and increment refcnt  
 		 * (to compensate for not calling inotify_add_to_idr() 
 		 */
-		PDEBUGG("%s: New Implicit watch under wd : %d \n", __func__, wd);
+		PDEBUG("%s: New Implicit watch under wd : %d \n", __func__, wd);
 		fsnotify_get_mark(&tmp_i_mark->fsn_mark);
 		implicit_watch = 1; 
 	} else { 
