@@ -366,9 +366,11 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
          * If it is an Ri mark, and the event is to close the file, 
          * we can destroy it here 
          */
+#if 0
         if(fsnotify_is_recursive_mark(inode_mark) && (mask & FS_CLOSE)) {
             fsnotify_destroy_mark(inode_mark, inode_group, 1);
         }
+#endif
 
 		if (inode_group)
 			inode_node = srcu_dereference(inode_node->next,
