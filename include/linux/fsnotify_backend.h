@@ -20,7 +20,8 @@
 #include <linux/hashtable.h>
 
 #undef PDEBUG
-#define NOTIFY_DEBUG
+//#define NOTIFY_DEBUG
+#undef NOTIFY_DEBUG
 #ifdef NOTIFY_DEBUG
      /* This one if debugging is on*/
 #define PDEBUG(fmt, args...) printk( KERN_INFO "notify: " fmt, ## args)
@@ -79,6 +80,8 @@
 				   FS_DELETE | FS_OPEN_PERM | FS_ACCESS_PERM)
 
 #define FS_MOVE			(FS_MOVED_FROM | FS_MOVED_TO)
+
+#define FS_CLOSE        (FS_CLOSE_WRITE | FS_CLOSE_NOWRITE)
 
 #define ALL_FSNOTIFY_PERM_EVENTS (FS_OPEN_PERM | FS_ACCESS_PERM)
 
@@ -254,7 +257,7 @@ struct fsnotify_mark_connector {
 	};
 	struct {
 		atomic_t r_utime;		/* Rule updated time */
-		struct hlist_head r_list;       /* list of the recursive rules added by the user for this inode */
+		//struct hlist_head r_list;       /* list of the recursive rules added by the user for this inode */
 	};
 };
 
@@ -291,7 +294,7 @@ struct fsnotify_mark {
 	/* List of marks for inode / vfsmount [connector->lock, mark ref] */
 	struct hlist_node obj_list;
 	/* List of marks for inode / vfsmount [connector->lock, mark ref] */
-	struct hlist_node rule_list;
+	//struct hlist_node rule_list;
 	/* Head of list of marks for an object [mark ref] */
 	struct fsnotify_mark_connector *connector;
 	/* Events types to ignore [mark->lock, group->mark_mutex] */

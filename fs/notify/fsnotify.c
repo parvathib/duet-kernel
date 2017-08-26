@@ -257,7 +257,6 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	struct mount *mnt;
 	int ret = 0;
 	struct vfsmount *vfsmnt = NULL;
-	int mask_special = RECURSIVE_ADD_FSNOTIFY_EVENTS & ~FS_OPEN;
 	/* global tests shouldn't care about events on child only the specific event */
 	__u32 test_mask = (mask & ~FS_EVENT_ON_CHILD);
 
@@ -268,7 +267,7 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	else
 		mnt = NULL;
 	
-	if(mask & mask_special)//RECURSIVE_ADD_FSNOTIFY_EVENTS) {
+	if(mask & RECURSIVE_ADD_FSNOTIFY_EVENTS) 
 		fsnotify_apply_recursive_rules(to_tell, vfsmnt, file_name);
 	/*
 	 * Optimization: srcu_read_lock() has a memory barrier which can
@@ -362,6 +361,14 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 		PDEBUGG("%s Sent event for file %s\n", __func__, file_name);
 		if (ret && (mask & ALL_FSNOTIFY_PERM_EVENTS))
 			goto out;
+        
+        /* 
+         * If it is an Ri mark, and the event is to close the file, 
+         * we can destroy it here 
+         */
+        if(fsnotify_is_recursive_mark(inode_mark) && (mask & FS_CLOSE)) {
+            fsnotify_destroy_mark(inode_mark, inode_group, 1);
+        }
 
 		if (inode_group)
 			inode_node = srcu_dereference(inode_node->next,

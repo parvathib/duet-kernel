@@ -518,6 +518,11 @@ int __inotify_update_existing_watch(struct fsnotify_mark *fsn_mark, struct inode
 	int add_rule = 0;
 	int save_spare_mask = 0;
 	__u32 spare_mask = 0;
+	struct fsnotify_group *group = fsn_mark->group;
+	struct idr *idr = &group->inotify_data.idr;
+	spinlock_t *idr_lock = &group->inotify_data.idr_lock;
+	int create_wd = 0;
+	
 	PDEBUG("%s mask %x implicit_watch %d implicit_wd %d \n", __func__, mask, implicit_watch, implicit_wd);
 	
 	spin_lock(&fsn_mark->lock);
@@ -525,18 +530,22 @@ int __inotify_update_existing_watch(struct fsnotify_mark *fsn_mark, struct inode
 	
 	if(!implicit_watch) { //explicit add request
 		if((fsnotify_is_rule_mark(fsn_mark) && !(mask & IN_RECURSIVE_ADD)) || // Re & N : Don't allow.
-			(fsnotify_is_normal_mark(fsn_mark) && (mask & IN_RECURSIVE_ADD))){  // N & Re : Don't allow.
+			(fsnotify_is_normal_mark(fsn_mark) && (mask & IN_RECURSIVE_ADD))) {  // N & Re : Don't allow.
 			spin_unlock(&fsn_mark->lock);
+			PDEBUG("%s Re & N or N & Re requested. Not going to update the mark\n", __func__);
 			goto end;
 		}
-		if(fsnotify_is_recursive_mark(fsn_mark)){ // If it Ri & (Re or N), always add the mask. The mark becomes of type N or Re 
+		if(fsnotify_is_recursive_mark(fsn_mark)) { // If it Ri & (Re or N), always add the mask. The mark becomes of type N or Re 
 			add = 1; 
 			save_spare_mask = 1;
 			spare_mask = mask;
-			if(mask & IN_RECURSIVE_ADD) //If it is Ri & Re, add the rule to the list
+			create_wd = 1; 
+			if(mask & IN_RECURSIVE_ADD) { //If it is Ri & Re, add the rule to the list
 				add_rule = 1;
+			}
 			else //if Ri & N, make it a normal node. 
 				fsn_mark->mask &= ~(IN_RECURSIVE_ADD);
+			PDEBUG("%s Ri & (Re or N) requested. Should create a new wd\n", __func__);
 		}
 		if((fsnotify_is_rule_mark(fsn_mark) || fsnotify_is_normal_mark(fsn_mark)) && (fsn_mark->spare_mask)) {//update the spare mask 
 			spare_mask = mask;
@@ -550,6 +559,7 @@ int __inotify_update_existing_watch(struct fsnotify_mark *fsn_mark, struct inode
 				spare_mask = old_mask;
 			}
 			mask &= ~(IN_RECURSIVE_ADD);
+			PDEBUG("%s (Re or N) & Ri is requested. Save the spare mask\n", __func__);
 		}
 	}
 	if(!implicit_watch && (mask & IN_RECURSIVE_ADD)) {
@@ -574,9 +584,22 @@ int __inotify_update_existing_watch(struct fsnotify_mark *fsn_mark, struct inode
 
 	new_mask = fsn_mark->mask;
 	spin_unlock(&fsn_mark->lock);
-
+	
 	i_mark = container_of(fsn_mark, struct inotify_inode_mark, fsn_mark);
-	if(implicit_wd >= 0)
+	if(create_wd) {
+		ret = inotify_add_to_idr(idr, idr_lock, i_mark);
+		if (ret)
+			goto end;
+
+		/* increment the number of watches the user has */
+		if (!inc_inotify_watches(group->inotify_data.ucounts)) {
+			inotify_remove_from_idr(group, i_mark);
+			ret = -ENOSPC;
+			goto end;
+		}
+	}
+
+	if((implicit_wd >= 0) && !create_wd)
 		i_mark->wd = implicit_wd;
 
 	if (old_mask != new_mask) {
@@ -608,7 +631,7 @@ static int inotify_update_existing_watch(struct fsnotify_group *group,
 	int ret;
 	PDEBUGG("%s, modified mask %x\n", __func__, mask);
 	fsn_mark = fsnotify_find_mark(&inode->i_fsnotify_marks, group);
-	if (!fsn_mark) {
+	if ((!fsn_mark)) { //|| (fsn_mark && fsnotify_is_recursive_mark(fsn_mark))) {
 		ret = -ENOENT;
 		goto end;
 	}

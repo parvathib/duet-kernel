@@ -552,9 +552,10 @@ int  fsnotify_is_latest(struct inode *inode, struct vfsmount *mnt)
 {
 	int ret = 0;
 	int idx;
+	int err = 0;
 	struct fsnotify_mark_connector __rcu **connp;
 	struct fsnotify_mark_connector *conn;
-	if(!atomic_read(&g_rutime) || !atomic_read(&n_rules)) {
+	if(!atomic_read(&g_rutime) || !atomic_read(&n_rules))) {
 		return 1;		
 	}
 //	if (inode)
@@ -562,11 +563,15 @@ int  fsnotify_is_latest(struct inode *inode, struct vfsmount *mnt)
 	/*else
 		connp = &real_mount(mnt)->mnt_fsnotify_marks; */
 	/* dereference this inode connector */
+restart:	
 	idx = srcu_read_lock(&fsnotify_mark_srcu);
 	conn = srcu_dereference(*connp, &fsnotify_mark_srcu);
 	if (!conn) {
 		srcu_read_unlock(&fsnotify_mark_srcu, idx);
+		//err = fsnotify_attach_connector_to_object(connp, inode, mnt);
+		//if (err)
 		return 0;;
+		//goto restart;
 	}
 	if (atomic_read(&conn->r_utime) == atomic_read(&g_rutime)) {
 		ret = 1;
@@ -691,6 +696,7 @@ updated:
 
 int __fsnotify_update_marks_inode(struct inode *inode, struct vfsmount *mnt)
 {
+	PDEBUGG("Entering %s \n", __func__);
 	struct fsnotify_mark_connector *inode_conn = NULL;	
 	struct hlist_node *inode_node = NULL, /**vfsmount_node = NULL, */*rule_node = NULL;
 	struct fsnotify_mark *inode_mark = NULL/*, *vfsmount_mark = NULL*/;
@@ -700,7 +706,6 @@ int __fsnotify_update_marks_inode(struct inode *inode, struct vfsmount *mnt)
 	int bkt;
 	int ret = 0;
 	int err;
-	PDEBUGG("Entering %s \n", __func__);
 restart:
 	iter_info.srcu_idx = srcu_read_lock(&fsnotify_mark_srcu);	
 	inode_conn = srcu_dereference(inode->i_fsnotify_marks, &fsnotify_mark_srcu);
@@ -755,7 +760,7 @@ restart:
 					}
 				}
 				if(hash_node) {
-					PDEBUGG("%s Applying rules for existing marks: Hashnode %p updated: %d  is_rule_mark %d going to apply rules for inode %p\n", __func__,  hash_node, hash_node->updated, fsnotify_is_rule_mark(inode_mark), inode);
+					PDEBUG("%s Applying rules for existing marks: Hashnode %p updated: %d  is_rule_mark %d going to apply rules for inode %p\n", __func__,  hash_node, hash_node->updated, fsnotify_is_rule_mark(inode_mark), inode);
 					mutex_lock(&inode_group->mark_mutex);
 					fsnotify_update_existing_mark(hash_node, inode_group, inode, inode_mark);
 					mutex_unlock(&inode_group->mark_mutex); 
@@ -765,7 +770,7 @@ restart:
 		rule_node = srcu_dereference(rule_node->next,
 						      &fsnotify_mark_srcu);	
 	}
-	PDEBUGG("%s Done with rules for inode %p\n", __func__, inode);
+	PDEBUG("%s Done with rules for inode %p\n", __func__, inode);
 	/* start adding/updating the marks at this inode */
 	if(hash_empty(pooled_group_masks))
 		goto update;
@@ -1000,7 +1005,7 @@ struct dentry *fsnotify_get_dentry(struct inode* inode,
 	}
 out:
 	if(alias) {
-		PDEBUGG("%s its a file with name %s and dentry name for given inode %s\n", __func__, file_name, alias->d_name.name);
+		PDEBUG("%s its a file with name %s and dentry name for given inode %s\n", __func__, file_name, alias->d_name.name);
 	}
 	//spin_unlock(&inode->i_lock);
         //dget(alias);
@@ -1009,7 +1014,7 @@ out:
 
 int fsnotify_update_marks_inodes(const unsigned char *file_name, struct inode *inode, struct vfsmount *mnt)
 {
-	struct dentry *dentry; 
+	struct dentry *dentry, *parent; 
 	int ret = 0; 
 	struct inode *next; 
 	int reached_latest = 0;
@@ -1064,6 +1069,7 @@ int fsnotify_update_marks_inodes(const unsigned char *file_name, struct inode *i
 		}
 		iput(inode);
 	}
+out:
 	return ret;
 }
 
