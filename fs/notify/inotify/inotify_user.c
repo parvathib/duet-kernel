@@ -670,15 +670,15 @@ int inotify_new_watch(struct fsnotify_group *group,
 		 * Implicit add watch. Use the one given wd and increment refcnt  
 		 * (to compensate for not calling inotify_add_to_idr() 
 		 */
-		PDEBUG("%s: New Implicit watch under wd : %d \n", __func__, wd);
 		fsnotify_get_mark(&tmp_i_mark->fsn_mark);
+		PDEBUG("%s: New Implicit watch under wd : %d mark %p \n", __func__, wd, tmp_i_mark->fsn_mark);
 		implicit_watch = 1; 
 	} else { 
 		/* Explicit add watch. Allocate a new wd. */
 		ret = inotify_add_to_idr(idr, idr_lock, tmp_i_mark);
 		if (ret)
 			goto out_err;
-		PDEBUG("%s: New Explicit watch under wd : %d \n", __func__, ret);
+		PDEBUG("%s: New Explicit watch under wd : %d mark %p\n", __func__, ret, tmp_i_mark->fsn_mark);
 	}
 	if(!implicit_watch) {
 		/* increment the number of watches the user has */
@@ -694,9 +694,8 @@ int inotify_new_watch(struct fsnotify_group *group,
 	ret = fsnotify_add_mark_locked(&tmp_i_mark->fsn_mark, inode, NULL, 0, implicit_watch);
 	if (ret) {
 		/* we failed to get on the inode */
-		if(implicit_watch) {
+		if(implicit_watch)
 			inotify_drop_implicit_ref(tmp_i_mark);
-		}
 		else
 			/* get off the idr */
 			inotify_remove_from_idr(group, tmp_i_mark);

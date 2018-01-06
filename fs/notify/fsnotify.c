@@ -191,8 +191,10 @@ static int send_to_group(struct inode *to_tell,
 	struct fsnotify_group *group = NULL;
 	__u32 inode_test_mask = 0;
 	__u32 vfsmount_test_mask = 0;
-
-	if (unlikely(!inode_mark && !vfsmount_mark)) {
+    struct dentry *dentry = NULL;
+    struct inode *next;
+	
+    if (unlikely(!inode_mark && !vfsmount_mark)) {
 		BUG();
 		return 0;
 	}
@@ -235,7 +237,8 @@ static int send_to_group(struct inode *to_tell,
 	if (!inode_test_mask && !vfsmount_test_mask)
 		return 0;
 
-	return group->ops->handle_event(group, to_tell, inode_mark,
+    //fsnotify_get_path_to_rule()	
+    return group->ops->handle_event(group, to_tell, inode_mark,
 					vfsmount_mark, mask, data, data_is,
 					file_name, cookie, iter_info);
 }
@@ -357,8 +360,8 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 		ret = send_to_group(to_tell, inode_mark, vfsmount_mark, mask,
 				    data, data_is, cookie, file_name,
 				    &iter_info);
-
-		PDEBUGG("%s Sent event for file %s\n", __func__, file_name);
+        if(mask & FS_CLOSE)
+    		PDEBUG("%s Sent close event for file %s inode %p mark %p <refcnt> %d\n", __func__, file_name, to_tell, inode_mark, atomic_read(&inode_mark->refcnt));
 		if (ret && (mask & ALL_FSNOTIFY_PERM_EVENTS))
 			goto out;
         
@@ -366,11 +369,12 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
          * If it is an Ri mark, and the event is to close the file, 
          * we can destroy it here 
          */
-#if 0
         if(fsnotify_is_recursive_mark(inode_mark) && (mask & FS_CLOSE)) {
+    		PDEBUG("%s Destroying mark for file inode %p mark %p  <refcnt>%d for %s\n", __func__, to_tell, inode_mark, atomic_read(&inode_mark->refcnt), file_name);
+            fsnotify_get_mark(inode_mark);
             fsnotify_destroy_mark(inode_mark, inode_group, 1);
+            fsnotify_put_mark(inode_mark);
         }
-#endif
 
 		if (inode_group)
 			inode_node = srcu_dereference(inode_node->next,

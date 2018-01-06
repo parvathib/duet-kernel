@@ -233,7 +233,10 @@ void fsnotify_put_mark(struct fsnotify_mark *mark)
 	struct fsnotify_mark_connector *conn;
 	struct inode *inode = NULL;
 	bool free_conn = false;
-	/* Catch marks that were actually never attached to object */
+    if(fsnotify_is_recursive_mark(mark)) {
+        PDEBUG("%s decrementing refcnt %d for mark %p\n", __func__, atomic_read(&mark->refcnt), mark);
+    }
+    /* Catch marks that were actually never attached to object */
 	if (!mark->connector) {
 		if (atomic_dec_and_test(&mark->refcnt))
 			fsnotify_final_mark_destroy(mark);
@@ -246,9 +249,11 @@ void fsnotify_put_mark(struct fsnotify_mark *mark)
 	 */
 	if (!atomic_dec_and_lock(&mark->refcnt, &mark->connector->lock))
 		return;
-	if(fsnotify_is_rule_mark(mark)) {
+
+    PDEBUG("%s mark %p, refcnt %d\n",__func__, mark, atomic_read(&mark->refcnt));
+    if(fsnotify_is_rule_mark(mark))
 		atomic_dec(&n_rules);	
-	}
+	
 
 	conn = mark->connector;
 	hlist_del_init_rcu(&mark->obj_list);
@@ -444,6 +449,8 @@ void fsnotify_destroy_mark(struct fsnotify_mark *mark,
 		return;
 	}
 out:
+    //if(implicit_watch) 
+    PDEBUG("%s Before calling fsnotify_detach_mark mark : %p, <refcnt> %d for % watch \n", __func__, mark, atomic_read(&mark->refcnt), implicit_watch? "implicit": "explicit");
 	fsnotify_detach_mark(mark);
 	mutex_unlock(&group->mark_mutex);
 	fsnotify_free_mark(mark);
@@ -751,8 +758,10 @@ restart:
 					//if(fsnotify_is_recursive_mark(inode_mark)) {
 					else {
 						PDEBUG("%s Removing the mark %p  going to apply rules for inode %p\n", __func__, inode_mark, inode);
-						fsnotify_destroy_mark(inode_mark, inode_group, 1);
-					}
+						fsnotify_get_mark(inode_mark);
+                        fsnotify_destroy_mark(inode_mark, inode_group, 1);
+					    fsnotify_put_mark(inode_mark);
+                    }
 				}
 				if(hash_node) {
 					PDEBUGG("%s Applying rules for existing marks: Hashnode %p updated: %d  is_rule_mark %d going to apply rules for inode %p\n", __func__,  hash_node, hash_node->updated, fsnotify_is_rule_mark(inode_mark), inode);
@@ -1025,7 +1034,6 @@ int fsnotify_update_marks_inodes(const unsigned char *file_name, struct inode *i
 		iput(inode);
 		return -ENOENT;
 	}
-	//dput(dentry);
 	PDEBUGG("%s PUSH: given filename:<<%s>> dentry filename:<<%s>>, inode %p\n", __func__, file_name, dentry->d_name.name, inode);
 	do {
 		if(!dentry) {
@@ -1039,19 +1047,16 @@ int fsnotify_update_marks_inodes(const unsigned char *file_name, struct inode *i
 		/* If its the root or latest, push inode to the stack and stop traversing */
 		if(IS_ROOT(dentry) || (fsnotify_is_latest(inode, mnt))) {
 			PDEBUGG("%s We are at root/latest node :<<%s>>\n", __func__, dentry->d_name.name);
-			//dput(dentry);
 			reached_latest = 1;
 			break;
 		}
 		PDEBUGG("%s Grabbing inode %p \n", __func__, d_inode(dentry->d_parent));
 		next = igrab(d_inode(dentry->d_parent));
-		//dput(dentry);
 		if(!next) {
 			break;
 		}
 		inode = next;
 		dentry = fsnotify_get_dentry(inode, NULL); 
-		//dentry = d_find_any_alias(inode);	
 		PDEBUGG("%s PUSH: dentry filename:<<%s>>, inode %p\n", __func__, dentry->d_name.name, inode);
 	}while(1);
 
@@ -1206,12 +1211,14 @@ int fsnotify_add_mark_locked(struct fsnotify_mark *mark, struct inode *inode,
 	atomic_inc(&group->num_marks);
 	fsnotify_get_mark(mark); /* for g_list */
 	spin_unlock(&mark->lock);
-	PDEBUGG("%s, added in the g_list mark %p <refcnt> %d", __func__, mark, atomic_read(&mark->refcnt));
+    if(implicit_watch)
+	    PDEBUG("%s, added in the g_list mark %p <refcnt> %d", __func__, mark, atomic_read(&mark->refcnt));
 	ret = fsnotify_add_mark_list(mark, inode, mnt, allow_dups, implicit_watch);
 	if (ret)
 		goto err;
 
-	PDEBUGG("%s added in object list mark %p <refcnt> %d\n", __func__, mark, atomic_read(&mark->refcnt));
+    if(implicit_watch)
+	    PDEBUG("%s added in object list mark %p <refcnt> %d\n", __func__, mark, atomic_read(&mark->refcnt));
 	if (mark->mask)
 		fsnotify_recalc_mask(mark->connector);
 
