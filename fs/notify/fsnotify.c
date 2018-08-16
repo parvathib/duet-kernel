@@ -33,7 +33,9 @@
  */
 void __fsnotify_inode_delete(struct inode *inode)
 {
-	fsnotify_clear_marks_by_inode(inode);
+    //printk(">>>Is getting called %p refcnt %d\n", inode, atomic_read(&inode->i_count));
+    //`dump_stack();
+    fsnotify_clear_marks_by_inode(inode);
 }
 EXPORT_SYMBOL_GPL(__fsnotify_inode_delete);
 
@@ -260,19 +262,25 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	struct mount *mnt;
 	int ret = 0;
 	struct vfsmount *vfsmnt = NULL;
-	/* global tests shouldn't care about events on child only the specific event */
+    char *relative_path = NULL;
+	
+    /* global tests shouldn't care about events on child only the specific event */
 	__u32 test_mask = (mask & ~FS_EVENT_ON_CHILD);
 
 	if (data_is == FSNOTIFY_EVENT_PATH) {
 		mnt = real_mount(((const struct path *)data)->mnt);
 		vfsmnt = ((const struct path *)data)->mnt;
 	}
-	else
+	else {
 		mnt = NULL;
+    }
 	
-	if(mask & RECURSIVE_ADD_FSNOTIFY_EVENTS) 
-		fsnotify_apply_recursive_rules(to_tell, vfsmnt, file_name);
-	/*
+	if(mask & RECURSIVE_ADD_FSNOTIFY_EVENTS) {
+		//if(strcmp("ext4", to_tell->i_sb->s_type->name) == 0)
+        //    printk(">>>>>>>>>>>>>>>> %s  fstype %s \n",__func__,to_tell->i_sb->s_type->name);
+        fsnotify_apply_recursive_rules(to_tell, vfsmnt, file_name);
+	}
+    /*
 	 * Optimization: srcu_read_lock() has a memory barrier which can
 	 * be expensive.  It protects walking the *_fsnotify_marks lists.
 	 * However, if we do not walk the lists, we do not have to do
@@ -357,23 +365,49 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 		iter_info.inode_mark = inode_mark;
 		iter_info.vfsmount_mark = vfsmount_mark;
 		PDEBUGG("%s Sending event for file %s\n", __func__, file_name);
-		ret = send_to_group(to_tell, inode_mark, vfsmount_mark, mask,
+        if(fsnotify_is_recursive_mark(inode_mark)) {
+		    PDEBUGG("%s GETTING RELATIVE PATH %s\n", __func__, file_name);
+            relative_path = kmalloc(PATH_MAX, GFP_KERNEL);
+            if (!relative_path) {
+                return 0;
+            }
+            memset(relative_path, 0, PATH_MAX);
+            if(fsnotify_get_relative_path(file_name, to_tell, vfsmnt, relative_path,
+                            inode_mark, vfsmount_mark) < 0) {
+                goto out;
+            }
+            ret = send_to_group(to_tell, inode_mark, vfsmount_mark, mask,
+				    data, data_is, cookie, relative_path,
+				    &iter_info);
+            
+        } else {	
+            ret = send_to_group(to_tell, inode_mark, vfsmount_mark, mask,
 				    data, data_is, cookie, file_name,
 				    &iter_info);
-        if(mask & FS_CLOSE)
-    		PDEBUG("%s Sent close event for file %s inode %p mark %p <refcnt> %d\n", __func__, file_name, to_tell, inode_mark, atomic_read(&inode_mark->refcnt));
+        }
 		if (ret && (mask & ALL_FSNOTIFY_PERM_EVENTS))
 			goto out;
         
+
         /* 
          * If it is an Ri mark, and the event is to close the file, 
          * we can destroy it here 
          */
-        if(fsnotify_is_recursive_mark(inode_mark) && (mask & FS_CLOSE)) {
+        if(fsnotify_is_recursive_mark(inode_mark) && ((mask & FS_CLOSE))) {
+    		PDEBUG("%s Sent close event for file %s  for parent %d inode %p mark %p <refcnt> %d\n", __func__, file_name, (mask & FS_EVENT_ON_CHILD) ? 1:0, to_tell, inode_mark, atomic_read(&inode_mark->refcnt));
     		PDEBUG("%s Destroying mark for file inode %p mark %p  <refcnt>%d for %s\n", __func__, to_tell, inode_mark, atomic_read(&inode_mark->refcnt), file_name);
-            fsnotify_get_mark(inode_mark);
-            fsnotify_destroy_mark(inode_mark, inode_group, 1);
-            fsnotify_put_mark(inode_mark);
+            if(!(mask & FS_EVENT_ON_CHILD))
+            {
+            //    fsnotify_get_mark(inode_mark);
+             //   fsnotify_destroy_mark(inode_mark, inode_group, 1);
+             //   fsnotify_put_mark(inode_mark);
+            //}
+            //else
+            //{
+                if(fsnotify_remove_implicit_marks(file_name, to_tell, vfsmnt,
+                                inode_mark, vfsmount_mark) < 0)
+                                goto out;
+            }
         }
 
 		if (inode_group)
@@ -385,6 +419,8 @@ int fsnotify(struct inode *to_tell, __u32 mask, const void *data, int data_is,
 	}
 	ret = 0;
 out:
+    if(relative_path)
+        kfree(relative_path);
 	srcu_read_unlock(&fsnotify_mark_srcu, iter_info.srcu_idx);
 
 	return ret;

@@ -450,7 +450,7 @@ void fsnotify_destroy_mark(struct fsnotify_mark *mark,
 	}
 out:
     //if(implicit_watch) 
-    PDEBUG("%s Before calling fsnotify_detach_mark mark : %p, <refcnt> %d for % watch \n", __func__, mark, atomic_read(&mark->refcnt), implicit_watch? "implicit": "explicit");
+    PDEBUGG("%s Before calling fsnotify_detach_mark mark : %p, <refcnt> %d for %s watch \n", __func__, mark, atomic_read(&mark->refcnt), implicit_watch? "implicit": "explicit");
 	fsnotify_detach_mark(mark);
 	mutex_unlock(&group->mark_mutex);
 	fsnotify_free_mark(mark);
@@ -555,6 +555,169 @@ out:
 	return conn;
 }
 
+int fsnotify_destroy_implicit_marks(struct inode *inode, 
+                            struct vfsmount *mnt,
+                            struct fsnotify_mark *inode_mark,
+                            struct fsnotify_mark *vfsmount_mark)
+{
+	int ret = 0;
+	int idx;
+    struct hlist_node *inode_node = NULL, *vfsmount_node = NULL;
+    struct fsnotify_mark *parent_inode_mark = NULL, *parent_vfsmount_mark = NULL;
+	struct fsnotify_mark_connector __rcu **connp;
+	struct fsnotify_mark_connector *conn;
+    struct fsnotify_group *group = NULL, *parent_inode_group = NULL;
+   if (unlikely(!inode_mark && !vfsmount_mark)) {
+        BUG();
+        return 0;
+    }
+    //TODO : vfsmount
+    if(!inode_mark && vfsmount_mark) {
+        return 0;
+    }
+    if(inode_mark) {
+        group = inode_mark->group;
+    }
+	
+    if(!atomic_read(&g_rutime) || !atomic_read(&n_rules)) {
+		return 0;		
+	}
+//	if (inode)
+	connp = &inode->i_fsnotify_marks;
+	/*else
+		connp = &real_mount(mnt)->mnt_fsnotify_marks; */
+	/* dereference this inode connector */
+	idx = srcu_read_lock(&fsnotify_mark_srcu);
+	conn = srcu_dereference(*connp, &fsnotify_mark_srcu);
+	if (!conn) {
+		srcu_read_unlock(&fsnotify_mark_srcu, idx);
+		return 0;;
+	}
+    if(conn) {
+        inode_node = srcu_dereference(conn->list.first, &fsnotify_mark_srcu);
+    }
+
+	if (!(conn->flags & FSNOTIFY_OBJ_TYPE_INODE)) {
+        srcu_read_unlock(&fsnotify_mark_srcu, idx);
+        return 0;
+    }
+
+    while(inode_node) {
+        PDEBUG("%s Before removing the recursive mark for inode\n", __func__);
+        //printk("%s Before removing the recursive mark for inode\n", __func__);
+        parent_inode_group = NULL;
+        parent_inode_mark = NULL;
+        
+        if(inode_node) {
+            parent_inode_mark = hlist_entry(srcu_dereference(inode_node, 
+                                    &fsnotify_mark_srcu), 
+                                    struct fsnotify_mark, 
+                                    obj_list);
+            parent_inode_group = parent_inode_mark->group;
+        }
+        if(!parent_inode_group)
+        {
+            printk("%s AS SUSPECTED, parent group is null \n", __func__);
+            break;
+        }
+        int cmp = fsnotify_compare_groups(group, parent_inode_group);
+        if((cmp == 0) && fsnotify_is_recursive_mark(parent_inode_mark))
+        {
+            PDEBUG("%s Removing the recursive mark %p for the inode %p refcnt %d\n", __func__, parent_inode_mark, inode, atomic_read(&parent_inode_mark->refcnt));
+            //printk("%s Removing the recursive mark %p for the inode %p refcnt %d\n", __func__, parent_inode_mark, inode, atomic_read(&parent_inode_mark->refcnt));
+            fsnotify_get_mark(parent_inode_mark);
+            fsnotify_destroy_mark(parent_inode_mark, parent_inode_group, 1);
+            fsnotify_put_mark(parent_inode_mark);
+            break;
+        }
+        if(parent_inode_group) {
+            inode_node = srcu_dereference(inode_node->next, &fsnotify_mark_srcu);
+        }
+    }
+    
+    srcu_read_unlock(&fsnotify_mark_srcu, idx);
+	return ret;
+}
+
+int fsnotify_is_rule_object(struct inode *inode, 
+                            struct vfsmount *mnt,
+                            struct fsnotify_mark *inode_mark,
+                            struct fsnotify_mark *vfsmount_mark)
+{
+	int ret = 0;
+	int idx;
+    struct hlist_node *inode_node = NULL, *vfsmount_node = NULL;
+    struct fsnotify_mark *parent_inode_mark = NULL, *parent_vfsmount_mark = NULL;
+	struct fsnotify_mark_connector __rcu **connp;
+	struct fsnotify_mark_connector *conn;
+    struct fsnotify_group *group = NULL, *parent_inode_group;
+    if(unlikely(!inode_mark && !vfsmount_mark)) {
+        BUG();
+        return 0;
+    }
+    //TODO : vfsmount
+    if(!inode_mark && vfsmount_mark) {
+        return 0;
+    }
+    if(inode_mark) {
+        group = inode_mark->group;
+    }
+	
+    if(!atomic_read(&g_rutime) || !atomic_read(&n_rules)) {
+		return 0;		
+	}
+//	if (inode)
+	connp = &inode->i_fsnotify_marks;
+	/*else
+		connp = &real_mount(mnt)->mnt_fsnotify_marks; */
+	/* dereference this inode connector */
+	idx = srcu_read_lock(&fsnotify_mark_srcu);
+	conn = srcu_dereference(*connp, &fsnotify_mark_srcu);
+	if (!conn) {
+		srcu_read_unlock(&fsnotify_mark_srcu, idx);
+		return 0;;
+	}
+    if(conn) {
+        inode_node = srcu_dereference(conn->list.first, &fsnotify_mark_srcu);
+    }
+
+	if (!(conn->flags & FSNOTIFY_OBJ_TYPE_INODE)) {
+        srcu_read_unlock(&fsnotify_mark_srcu, idx);
+        return 0;
+    }
+#if 1
+    while(inode_node) {
+        parent_inode_group = NULL;
+        parent_inode_mark = NULL;
+        
+        if(inode_node) {
+            parent_inode_mark = hlist_entry(srcu_dereference(inode_node, 
+                                    &fsnotify_mark_srcu), 
+                                    struct fsnotify_mark, 
+                                    obj_list);
+            parent_inode_group = parent_inode_mark->group;
+        }
+        if(!parent_inode_group)
+        {
+            printk("%s AS SUSPECTED, parent group is null \n", __func__);
+            break;
+        }
+        int cmp = fsnotify_compare_groups(group, parent_inode_group);
+        if((cmp == 0) && fsnotify_is_rule_mark(parent_inode_mark)) {
+            PDEBUG("%s Found the parent rule inode %p refcnt\n", __func__, inode);
+            //printk("%s Found the parent rule inode %p refcnt\n", __func__, inode);
+            ret = 1;
+            break;
+        }
+        if(parent_inode_group) {
+            inode_node = srcu_dereference(inode_node->next, &fsnotify_mark_srcu);
+        }
+    }
+#endif 
+    srcu_read_unlock(&fsnotify_mark_srcu, idx);
+	return ret;
+}
+
 int  fsnotify_is_latest(struct inode *inode, struct vfsmount *mnt) 
 {
 	int ret = 0;
@@ -573,9 +736,9 @@ int  fsnotify_is_latest(struct inode *inode, struct vfsmount *mnt)
 	conn = srcu_dereference(*connp, &fsnotify_mark_srcu);
 	if (!conn) {
 		srcu_read_unlock(&fsnotify_mark_srcu, idx);
-		return 0;;
+		return 0;
 	}
-	if (atomic_read(&conn->r_utime) == atomic_read(&g_rutime)) {
+	if (atomic_read(&conn->r_utime) == atomic_read(&g_rutime)) { //TODO This doesn't look good
 		ret = 1;
 	}
 	srcu_read_unlock(&fsnotify_mark_srcu, idx);
@@ -629,7 +792,7 @@ struct pool_mask *fsnotify_find_hnode(struct fsnotify_group *group)
 int fsnotify_add_hnode(struct pool_mask **hnode, struct fsnotify_group *group)
 {
 	int alloc_len = sizeof(struct pool_mask);
-	*hnode = kmalloc(alloc_len, GFP_KERNEL);
+	*hnode = kmalloc(alloc_len, GFP_NOWAIT);
 	if(!(*hnode)) {
 		return -ENOMEM; 	
 	}
@@ -722,6 +885,7 @@ restart:
 		goto restart;
 	}
 	PDEBUGG("%s Got the connector for inode %p\n", __func__, inode);
+	//printk("%s Got connector for inode %p i_count %d\n", __func__, inode, atomic_read(&inode->i_count));
 	/* Get the reference of head of rules list for this inode */	
 	rule_node = srcu_dereference(inode_conn->list.first,
 						&fsnotify_mark_srcu);
@@ -774,7 +938,8 @@ restart:
 		rule_node = srcu_dereference(rule_node->next,
 						      &fsnotify_mark_srcu);	
 	}
-	PDEBUGG("%s Done with rules for inode %p\n", __func__, inode);
+	//printk("%s Done with rules for inode %p i_count %d\n", __func__, inode, atomic_read(&inode->i_count));
+	PDEBUGG("%s Done with rules for inode %p i_count %d\n", __func__, inode, atomic_read(&inode->i_count));
 	/* start adding/updating the marks at this inode */
 	if(hash_empty(pooled_group_masks))
 		goto update;
@@ -782,19 +947,24 @@ restart:
 	hash_for_each(pooled_group_masks, bkt, hash_node, hentry) {
 		if(hash_node) {
 			if(!hash_node->updated) {
-				PDEBUG("%s Applying rules to new nodes: Hashnode %p updated: %d  going to apply rules for inode %p\n", __func__, hash_node, hash_node->updated, inode);
-				inode_group = hash_node->group;
+				//printk("%s Applying rules to new nodes: Hashnode %p updated: %d  going to apply rules for inode %p i_count %d\n", __func__, hash_node, hash_node->updated, inode, atomic_read(&inode->i_count));
+				PDEBUG("%s Applying rules to new nodes: Hashnode %p updated: %d  going to apply rules for inode %p i_count %d\n", __func__, hash_node, hash_node->updated, inode, atomic_read(&inode->i_count));
+				
+                inode_group = hash_node->group;
 				mutex_lock(&inode_group->mark_mutex);
 				inode_group->ops->add_new_mark(inode_group, inode, 
 							hash_node->mask, hash_node->mark_id);	
 				mutex_unlock(&inode_group->mark_mutex);
+				
+                //printk("%s After Applying rules to new nodes: Hashnode %p updated: %d  going to apply rules for inode %p i_count %d\n", __func__, hash_node, hash_node->updated, inode, atomic_read(&inode->i_count));
 			} 
 			hash_node->updated = 0;	
 		}
 	}
 update: 
 	fsnotify_update_inode_rule_time(inode_conn);
-	PDEBUG("%s Updated time %d , global time %d  no.of.rules %d for inode %p\n", __func__, atomic_read(&inode_conn->r_utime), atomic_read(&g_rutime), atomic_read(&n_rules), inode);
+	PDEBUG("%s Updated time %d , global time %d  no.of.rules %d for inode %p i_count %d\n", __func__, atomic_read(&inode_conn->r_utime), atomic_read(&g_rutime), atomic_read(&n_rules), inode, atomic_read(&inode->i_count));
+	//printk("%s Updated time %d , global time %d  no.of.rules %d for inode %p i_count %d\n", __func__, atomic_read(&inode_conn->r_utime), atomic_read(&g_rutime), atomic_read(&n_rules), inode, atomic_read(&inode->i_count));
 out:
 	srcu_read_unlock(&fsnotify_mark_srcu, iter_info.srcu_idx);
 	PDEBUGG("Exiting %s \n", __func__);
@@ -1016,37 +1186,194 @@ out:
 	return alias;
 }
 
-int fsnotify_update_marks_inodes(const unsigned char *file_name, struct inode *inode, struct vfsmount *mnt)
+int fsnotify_get_relative_path(const unsigned char *file_name,
+                            struct inode *inode,
+                            struct vfsmount *mnt, 
+                            char *relative_path,
+                            struct fsnotify_mark *inode_mark,
+                            struct fsnotify_mark *vfsmount_mark) 
+{
+    struct dentry *dentry;
+    int ret = 0;
+	int reached_rule_node = 0;
+    struct inode *rule_inode = NULL;
+    struct inode *cur_inode = NULL;
+	struct inode *next; 
+    struct vfsmount *cur_mnt = NULL;
+	PDEBUG("%s HELLOOOO I ENTERED THIS FUNCTION  <<%s>>\n", __func__, file_name);
+    cur_inode = igrab(inode);
+    dentry = fsnotify_get_dentry(cur_inode, file_name);
+    if(!dentry) {
+		PDEBUG("%s dentry of the passed inode is null, filename <<%s>>\n", __func__, file_name);
+        iput(cur_inode);
+        return -ENOENT;
+    }
+	PDEBUG("%s PUSH: given filename:<<%s>> dentry filename:<<%s>>, inode %p\n", __func__, file_name, dentry->d_name.name, cur_inode);
+    do {
+		if(!dentry) {
+			PDEBUG("%s dentry null alert!!!!!. Check it out!!!!\n", __func__);
+			break;
+		}
+		if(fsnotify_push(cur_inode)) {
+			PDEBUG("rules Stack overflow error occured \n");
+			break;
+		}
+		/* If its the root or rule inode, push inode to the stack and stop traversing */
+		if(IS_ROOT(dentry) || 
+            fsnotify_is_rule_object(cur_inode, cur_mnt, inode_mark, vfsmount_mark)) {
+            PDEBUG("%s We are at Rule node :<<%s>>\n", __func__, dentry->d_name.name);
+            //printk("%s We are at Rule node :<<%s>>\n", __func__, dentry->d_name.name);
+			reached_rule_node = 1;
+            rule_inode = cur_inode;
+		    break;
+        }
+		PDEBUG("%s Grabbing inode %p \n", __func__, d_inode(dentry->d_parent));
+		next = igrab(d_inode(dentry->d_parent));
+		if(!next) {
+			break;
+		}
+		cur_inode = next;
+		dentry = fsnotify_get_dentry(cur_inode, NULL); 
+		PDEBUG("%s PUSH: dentry filename:<<%s>>, inode %p\n", __func__, dentry->d_name.name, cur_inode);
+	}while(1);
+	int off = 0;
+    char *delimit = "/";
+    while((cur_inode = fsnotify_pop()) != NULL) {
+		PDEBUG("%s POP: inode %p i_count %d\n", __func__, cur_inode, atomic_read(&cur_inode->i_count));
+        if(cur_inode != inode) { 
+	        struct dentry *alias; //strcat(cur_inode->`d_name.name)	
+		    alias = hlist_entry(cur_inode->i_dentry.first, struct dentry, d_u.d_alias);
+            memcpy(relative_path + off, alias->d_name.name, strlen(alias->d_name.name));
+            off += strlen(alias->d_name.name);
+            memcpy(relative_path + off, delimit, strlen(delimit));
+            PDEBUG("%s <<< %s >>>  path so far : %s\n", __func__, alias->d_name.name, relative_path);
+        }
+        if((cur_inode == inode) && (file_name)) {
+            memcpy(relative_path + off, file_name, strlen(file_name));
+            off += strlen(file_name);
+            relative_path[off] = '\0';
+		    PDEBUG("%s <<< %s >>>  path so far : %s\n", __func__, file_name, relative_path);
+        }
+		iput(cur_inode);
+		//printk("%s After destroying rules inode %p i_count %d\n", __func__, cur_inode, atomic_read(&cur_inode->i_count));
+	}
+	return ret;
+
+}
+
+int __fsnotify_remove_implicit_marks(const unsigned char *file_name, 
+                                    struct inode *inode, 
+                                    struct vfsmount *mnt, 
+                                    struct fsnotify_mark *inode_mark,
+                                    struct fsnotify_mark *vfsmount_mark)
 {
 	struct dentry *dentry; 
 	int ret = 0; 
 	struct inode *next; 
+	int reached_rule_node = 0;
+    struct inode *rule_inode = NULL;
+    struct inode *cur_inode = NULL;
+    struct vfsmount *cur_mnt = NULL;
+	
+    PDEBUG("%s HELLOOOOO!! I Entered this function and going to grab inode %p \n", __func__, inode);
+
+	cur_inode = igrab(inode);
+    PDEBUG("%s HELLOOOOO!! Grabbed inode\n", __func__);
+	dentry = fsnotify_get_dentry(cur_inode, file_name);
+	if(!dentry) {
+		PDEBUG("%s dentry of the passed inode is null, filename <<%s>>\n", __func__, file_name);
+		//printk("%s dentry of the passed inode is null, filename <<%s>>\n", __func__, file_name);
+        iput(cur_inode);
+		return -ENOENT;
+	}
+
+	PDEBUG("%s PUSH: given filename:<<%s>> dentry filename:<<%s>>, inode %p\n", __func__, file_name, dentry->d_name.name, cur_inode);
+	//printk("%s PUSH: given filename:<<%s>> dentry filename:<<%s>>, inode %p i_count %d\n", __func__, file_name, dentry->d_name.name, cur_inode, atomic_read(&cur_inode->i_count));
+    do {
+		if(!dentry) {
+			PDEBUG("%s dentry null alert!!!!!. Check it out!!!!\n", __func__);
+			break;
+		}
+		if(fsnotify_push(cur_inode)) {
+			PDEBUG("rules Stack overflow error occured \n");
+			break;
+		}
+        
+		/* If its the root or rule inode, push inode to the stack and stop traversing */
+		if(IS_ROOT(dentry) || 
+            fsnotify_is_rule_object(cur_inode, cur_mnt, inode_mark, vfsmount_mark)) {
+            PDEBUG("%s We are at Rule node :<<%s>>\n", __func__, dentry->d_name.name);
+            //printk("%s We are at Rule node :<<%s>>\n", __func__, dentry->d_name.name);
+			reached_rule_node = 1;
+            rule_inode = cur_inode;
+			break;
+		}
+		PDEBUG("%s Grabbing inode %p \n", __func__, d_inode(dentry->d_parent));
+		next = igrab(d_inode(dentry->d_parent));
+		if(!next) {
+			break;
+		}
+		cur_inode = next;
+		dentry = fsnotify_get_dentry(cur_inode, NULL); 
+		PDEBUG("%s PUSH: dentry filename:<<%s>>, inode %p\n", __func__, dentry->d_name.name, cur_inode);
+		//printk("%s PUSH: dentry filename:<<%s>>, inode %p i_count %d\n", __func__, dentry->d_name.name, cur_inode, atomic_read(&cur_inode->i_count));
+	}while(1);
+
+	while((cur_inode = fsnotify_pop()) != NULL) {
+		PDEBUG("%s POP: inode %p i_count %d\n", __func__, cur_inode, atomic_read(&cur_inode->i_count));
+		//printk("%s POP: inode %p i_count %d\n", __func__, cur_inode, atomic_read(&cur_inode->i_count));
+#if 1
+        if(reached_rule_node) {
+            if(rule_inode != cur_inode)
+            {
+                ret = fsnotify_destroy_implicit_marks(cur_inode, cur_mnt, 
+                                            inode_mark, vfsmount_mark);
+                if(ret)
+                    reached_rule_node = 0;	
+            }
+		}
+#endif
+		iput(cur_inode);
+		//printk("%s After destroying rules inode %p i_count %d\n", __func__, cur_inode, atomic_read(&cur_inode->i_count));
+	}
+	return ret;
+}
+
+int fsnotify_update_marks_inodes(const unsigned char *file_name, struct inode *inode, struct vfsmount *mnt)
+{
+	struct dentry *dentry; 
+	int ret = 0; 
+	struct inode *next;
+    struct inode *cur_inode;
 	int reached_latest = 0;
 	
-	inode = igrab(inode);
+	cur_inode = igrab(inode);
 	
 	//if((S_ISDIR(inode->i_mode) || !file_name))
 	//	dentry = d_find_any_alias(inode);
 	//else
-		dentry = fsnotify_get_dentry(inode, file_name);
+	dentry = fsnotify_get_dentry(cur_inode, file_name);
 	if(!dentry) {
 		PDEBUG("%s dentry of the passed inode is null, filename <<%s>>\n", __func__, file_name);
-		iput(inode);
+		//printk("%s dentry of the passed inode is null, filename <<%s>>\n", __func__, file_name);
+		iput(cur_inode);
 		return -ENOENT;
 	}
-	PDEBUGG("%s PUSH: given filename:<<%s>> dentry filename:<<%s>>, inode %p\n", __func__, file_name, dentry->d_name.name, inode);
+	PDEBUG("%s PUSH: given filename:<<%s>> dentry filename:<<%s>>, inode %p i_count %d\n", __func__, file_name, dentry->d_name.name, cur_inode, atomic_read(&cur_inode->i_count));
+	//printk("%s PUSH: given filename:<<%s>> dentry filename:<<%s>>, inode %p i_count %d\n", __func__, file_name, dentry->d_name.name, cur_inode, atomic_read(&cur_inode->i_count));
 	do {
 		if(!dentry) {
 			PDEBUG("%s dentry null alert!!!!!. Check it out!!!!\n", __func__);
 			break;
 		}
-		if(fsnotify_push(inode)) {
+		if(fsnotify_push(cur_inode)) {
 			PDEBUG("rules Stack overflow error occured \n");
 			break;
 		}
 		/* If its the root or latest, push inode to the stack and stop traversing */
-		if(IS_ROOT(dentry) || (fsnotify_is_latest(inode, mnt))) {
+		if(IS_ROOT(dentry) || (fsnotify_is_latest(cur_inode, mnt))) {
 			PDEBUGG("%s We are at root/latest node :<<%s>>\n", __func__, dentry->d_name.name);
+			//printk("%s We are at root/latest node :<<%s>>\n", __func__, dentry->d_name.name);
 			reached_latest = 1;
 			break;
 		}
@@ -1055,21 +1382,57 @@ int fsnotify_update_marks_inodes(const unsigned char *file_name, struct inode *i
 		if(!next) {
 			break;
 		}
-		inode = next;
-		dentry = fsnotify_get_dentry(inode, NULL); 
-		PDEBUGG("%s PUSH: dentry filename:<<%s>>, inode %p\n", __func__, dentry->d_name.name, inode);
+		cur_inode = next;
+		dentry = fsnotify_get_dentry(cur_inode, NULL); 
+		PDEBUG("%s PUSH: dentry filename:<<%s>>, inode %p i_count %d\n", __func__, dentry->d_name.name, cur_inode, atomic_read(&cur_inode->i_count));
+		//printk("%s PUSH: dentry filename:<<%s>>, inode %p i_count %d\n", __func__, dentry->d_name.name, cur_inode, atomic_read(&cur_inode->i_count));
 	}while(1);
 
-	while((inode = fsnotify_pop()) != NULL) {
-		PDEBUGG("%s POP: inode %p\n", __func__, inode);
+	while((cur_inode = fsnotify_pop()) != NULL) {
+		//printk("%s POP: inode %p i_count %d\n", __func__, cur_inode, atomic_read(&cur_inode->i_count));
+		PDEBUG("%s POP: inode %p i_count %d\n", __func__, cur_inode, atomic_read(&cur_inode->i_count));
 		if(reached_latest) {
-			ret =  __fsnotify_update_marks_inode(inode, mnt);
+			ret =  __fsnotify_update_marks_inode(cur_inode, mnt);
 			if(ret)
 				reached_latest = 0;	
 		}
-		iput(inode);
+		iput(cur_inode);
+		//printk("%s After updating the rule inode %p i_count %d\n", __func__, cur_inode, atomic_read(&cur_inode->i_count));
 	}
 	return ret;
+}
+
+int fsnotify_remove_implicit_marks(const unsigned char *file_name, 
+                                struct inode *inode, 
+                                struct vfsmount *mnt, 
+                                struct fsnotify_mark *inode_mark,
+                                struct fsnotify_mark *vfsmount_mark)
+{
+    int ret = 0;
+	/* + Temp */ 
+	if(!inode)
+		return ret;
+	if((mnt) && (!inode)) {
+		return ret;
+	}
+	/* - Temp */
+	PDEBUG("====== Entered %s =======\n", __func__);
+	// TODO: use a more concurrent update mechanism for hash table 
+	    spin_lock(&mask_pool_lock);
+	//if(spin_trylock(&mask_pool_lock)) {
+		fsnotify_init_pool_masks();
+		ret = __fsnotify_remove_implicit_marks(file_name, inode, mnt, 
+                                inode_mark,
+                                vfsmount_mark);
+		fsnotify_free_pooled_masks();	
+		spin_unlock(&mask_pool_lock); 
+	//}
+	//else {
+	//	PDEBUG("%s mask_pool_lock is busy \n", __func__);
+	//}
+	PDEBUG("====== Exited %s =======\n", __func__);
+	return ret;		
+
 }
 
 int fsnotify_apply_recursive_rules(struct inode *inode, struct vfsmount *mnt, 
@@ -1089,16 +1452,16 @@ int fsnotify_apply_recursive_rules(struct inode *inode, struct vfsmount *mnt,
 	}
 	PDEBUG("====== Entered %s =======\n", __func__);
 	// TODO: use a more concurrent update mechanism for hash table 
-	//spin_lock(&mask_pool_lock);
-	if(spin_trylock(&mask_pool_lock)) {
+	    spin_lock(&mask_pool_lock);
+	//if(spin_trylock(&mask_pool_lock)) {
 		fsnotify_init_pool_masks();
 		ret = fsnotify_update_marks_inodes(file_name, inode, mnt); //TODO: should add support for vfsmount
 		fsnotify_free_pooled_masks();	
 		spin_unlock(&mask_pool_lock); 
-	}
-	else {
-		PDEBUG("%s mask_pool_lock is busy \n", __func__);
-	}
+	//}
+	//else {
+	//	PDEBUG("%s mask_pool_lock is busy \n", __func__);
+	//}
 	PDEBUG("====== Exited %s =======\n", __func__);
 	return ret;		
 

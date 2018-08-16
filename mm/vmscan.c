@@ -371,7 +371,7 @@ static unsigned long do_shrink_slab(struct shrink_control *shrinkctl,
 	trace_mm_shrink_slab_start(shrinker, shrinkctl, nr,
 				   nr_scanned, nr_eligible,
 				   freeable, delta, total_scan);
-
+    //printk(">>> START %s nr %ld nr_scanned %ld nr_eligible %ld freeable %ld delta %ld total_scan %ld\n", __func__, nr, nr_scanned, nr_eligible, freeable, delta, total_scan);
 	/*
 	 * Normally, we should not scan less than batch_size objects in one
 	 * pass to avoid too frequent shrinker calls, but if the slab has less
@@ -420,6 +420,7 @@ static unsigned long do_shrink_slab(struct shrink_control *shrinkctl,
 	else
 		new_nr = atomic_long_read(&shrinker->nr_deferred[nid]);
 
+    //printk(">>>> END %s freed %ld,  nr %ld new_nr %ld total_scan %ld\n", __func__, freed,  nr, new_nr, total_scan);
 	trace_mm_shrink_slab_end(shrinker, nid, freed, nr, new_nr, total_scan);
 	return freed;
 }

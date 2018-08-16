@@ -20,8 +20,8 @@
 #include <linux/hashtable.h>
 
 #undef PDEBUG
-//#define NOTIFY_DEBUG
-#undef NOTIFY_DEBUG
+#define NOTIFY_DEBUG
+//#undef NOTIFY_DEBUG
 #ifdef NOTIFY_DEBUG
      /* This one if debugging is on*/
 #define PDEBUG(fmt, args...) printk( KERN_INFO "notify: " fmt, ## args)

@@ -18,6 +18,19 @@ struct fsnotify_iter_info {
 int fsnotify_apply_recursive_rules(struct inode *inode, struct vfsmount *mnt, 
                                 const unsigned char *file_name);
 
+int fsnotify_remove_implicit_marks(const unsigned char *file_name, 
+                                struct inode *inode, 
+                                struct vfsmount *mnt, 
+                                struct fsnotify_mark *inode_mark,
+                                struct fsnotify_mark *vfsmount_mark);
+
+int fsnotify_get_relative_path(const unsigned char *file_name,
+                            struct inode *inode,
+                            struct vfsmount *mnt, 
+                            char *relative_path,
+                            struct fsnotify_mark *inode_mark,
+                            struct fsnotify_mark *vfsmount_mark); 
+
 /* destroy all events sitting in this groups notification queue */
 extern void fsnotify_flush_notify(struct fsnotify_group *group);
 

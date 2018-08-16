@@ -394,6 +394,11 @@ void __iget(struct inode *inode)
  */
 void ihold(struct inode *inode)
 {
+    if(atomic_read(&inode->i_count) < 1)
+    {
+        printk("%s >>>>>>>>>>>> inode %p refcnt %d\n", __func__, inode, atomic_read(&inode->i_count));
+        dump_stack();
+    }
 	WARN_ON(atomic_inc_return(&inode->i_count) < 2);
 }
 EXPORT_SYMBOL(ihold);
@@ -1527,6 +1532,11 @@ void iput(struct inode *inode)
 	if (!inode)
 		return;
 	BUG_ON(inode->i_state & I_CLEAR);
+    if(atomic_read(&inode->i_count) < 1)
+    {
+        printk("%s >>>>>>>>>>>> inode %p refcnt %d\n", __func__, inode, atomic_read(&inode->i_count));
+        dump_stack();
+    }
 retry:
 	if (atomic_dec_and_lock(&inode->i_count, &inode->i_lock)) {
 		if (inode->i_nlink && (inode->i_state & I_DIRTY_TIME)) {
